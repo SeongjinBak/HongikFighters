@@ -18,6 +18,7 @@ public class MainStart : MonoBehaviour {
     private void Start()
     {
         isButtonPressed = false;
+        StartCoroutine(ChangeSceneToPickWindow(false));
     }
     // Update is called once per frame
     void Update () {
@@ -29,27 +30,42 @@ public class MainStart : MonoBehaviour {
             if (!isButtonPressed)
             {
                 isButtonPressed = true;
-                StartCoroutine(ChangeSceneToPickWindow());
+                StartCoroutine(ChangeSceneToPickWindow(true));
             }
         }
 	}
 
-    IEnumerator ChangeSceneToPickWindow()
+    IEnumerator ChangeSceneToPickWindow(bool picked)
     {
-        // 깜빡이는 효과 넣을 부분임.
-        yield return new WaitForSecondsRealtime(3f);
-        float t = 0.0f;
-        while(t < 2.5f){
-            t += 0.25f;
-            spark.SetActive(false);
-            yield return new WaitForSecondsRealtime(0.25f);
-            spark.SetActive(true);
-            t += 0.25f;
-            yield return new WaitForSecondsRealtime(0.25f);
+        if(picked == false)
+        {
+            while (!isButtonPressed)
+            {
+                spark.SetActive(false);
+                yield return new WaitForSecondsRealtime(1.0f);
+                spark.SetActive(true);
+                yield return new WaitForSecondsRealtime(1.0f);
+            }
         }
+        else if(picked == true)
+        {
+            // 깜빡이는 효과 넣을 부분임.
+            yield return new WaitForSecondsRealtime(3f);
+            float t = 0.0f;
+            while (t < 2.5f)
+            {
+                t += 0.25f;
+                spark.SetActive(false);
+                yield return new WaitForSecondsRealtime(0.25f);
+                spark.SetActive(true);
+                t += 0.25f;
+                yield return new WaitForSecondsRealtime(0.25f);
+            }
 
-        spark.SetActive(false);
-        yield return new WaitForSecondsRealtime(0.5f);
-        SceneManager.LoadScene("CharacterSelectionWindow");
+            spark.SetActive(false);
+            yield return new WaitForSecondsRealtime(0.5f);
+            SceneManager.LoadScene("CharacterSelectionWindow");
+        }
+        
     }
 }

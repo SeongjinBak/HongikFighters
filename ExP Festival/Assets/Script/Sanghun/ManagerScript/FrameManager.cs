@@ -648,6 +648,14 @@ public class FrameManager : MonoBehaviour {
                 // gameover활성화
                 isGameOver = true;
                 GameManager.instance.forbidEveryInput = true;
+
+                // 승리자를 gameManager에 저장.
+                if (i == 0)
+                    GameManager.instance.winner = "Player 1";
+                else
+                    GameManager.instance.winner = "Player 2";
+
+
                 // 다음씬
                 StartCoroutine(GameOverWaiter());
 
@@ -664,6 +672,7 @@ public class FrameManager : MonoBehaviour {
 
     IEnumerator GameOverWaiter()
     {
+
         yield return new WaitForSeconds(1.3f);
         SceneManager.LoadScene("GameOverScene");
     }

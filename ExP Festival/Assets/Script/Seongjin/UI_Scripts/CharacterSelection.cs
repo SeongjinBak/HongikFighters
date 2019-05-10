@@ -22,6 +22,9 @@ public class CharacterSelection : MonoBehaviour {
     // 1p, 2p 캐릭터 선택 포인터
     private int player1_pointer;
     private int player2_pointer;
+    // 1p, 2p가 선택한 캐릭터
+    private int player1_choice;
+    private int player2_choice;
     // 1p, 2p 캐릭터 선택 완료 여부
     private bool player1_complete;
     private bool player2_complete;
@@ -30,6 +33,8 @@ public class CharacterSelection : MonoBehaviour {
     private List<GameObject> player2_frame = new List<GameObject>();
     // 액자 배열
     public GameObject[] group;
+    // 액자 canvas 2개 , UI창에서의 layer 구분을 위함.
+    public Canvas[] canvas;
     // 캐릭터 선택이 모두 완료 되었음을 나타내는 flag
     private bool isSelectionComplete;
 
@@ -45,6 +50,8 @@ public class CharacterSelection : MonoBehaviour {
         // 액자 초기화
         FramesInitialize();
 
+        player1_choice = 10;
+        player2_choice = 10;
         
         
     }
@@ -207,6 +214,8 @@ public class CharacterSelection : MonoBehaviour {
                 }
                 // 직후 액자 켜기
                 player1_frame[player1_pointer].SetActive(true);
+                // 1p의 액자가 위로가게끔 순서 재조정
+                ResetSortingOrder(1);
 
             }
             else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
@@ -218,6 +227,8 @@ public class CharacterSelection : MonoBehaviour {
 
                 // 직후 액자 켜기
                 player1_frame[player1_pointer].SetActive(true);
+                // 1p의 액자가 위로가게끔 순서 재조정
+                ResetSortingOrder(1);
             }
         }
 
@@ -239,6 +250,8 @@ public class CharacterSelection : MonoBehaviour {
                 }
                 // 직후 액자 켜기
                 player2_frame[player2_pointer].SetActive(true);
+                // 2p의 액자가 위로가게끔 순서 재조정
+                ResetSortingOrder(2);
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.RightArrow))
             {
@@ -249,6 +262,8 @@ public class CharacterSelection : MonoBehaviour {
 
                 // 직후 액자 켜기
                 player2_frame[player2_pointer].SetActive(true);
+                // 2p의 액자가 위로가게끔 순서 재조정
+                ResetSortingOrder(2);
             }
         }
 
@@ -265,16 +280,21 @@ public class CharacterSelection : MonoBehaviour {
                 PlayPickedAnim(player1_pointer);
                 // 선택되었을 시 액자 깜빡임/ 사운드 효과
                 StartCoroutine(PickedEffect(1));
+                // 선택한 동아리 저장.
+                player1_choice = player1_pointer;
+
             }  
             else
             {
                 // 2p가 선택해서 true 된 isSelect를 1p가 변경하지 못하게 함.
-                if(player2_pointer != player1_pointer)
+                if(player2_choice != player1_pointer)
                 {
                     isSelected[player1_pointer] = false;
                     player1_complete = false;
                     // 이미지 초기화
                     ImageInitialize(player1_pointer);
+                    // 선택 동아리 초기화
+                    player1_choice = 10;
                 }
             }
         }
@@ -289,20 +309,38 @@ public class CharacterSelection : MonoBehaviour {
                 PlayPickedAnim(player2_pointer);
                 // 선택되었을 시 액자 깜빡임/ 사운드 효과
                 StartCoroutine(PickedEffect(2));
+                player2_choice = player2_pointer;
             }
             else
             {
-                if (player2_pointer != player1_pointer)
+                if (player2_pointer != player1_choice)
                 {
                     isSelected[player2_pointer] = false;
                     player2_complete = false;
                     // 이미지 초기화
                     ImageInitialize(player2_pointer);
+                    // 동아리 초기화
+                    player2_choice = 10;
                 }
             }
         }
     }
-
+    // 액자의 sorting order를 정하는 함수
+    void ResetSortingOrder(int playerNum)
+    {
+        // 현재 움직인게 1p인경우
+        if(playerNum == 1)
+        {
+            canvas[0].sortingOrder = 1;
+            canvas[1].sortingOrder = 0;
+        }
+        // 현재 움직인게 2p인경우
+        else if(playerNum == 2)
+        {
+            canvas[0].sortingOrder = 0;
+            canvas[1].sortingOrder = 1;
+        }
+    }
     // 캐릭터가 선택 되었을 경우, 캐릭터 창이 '깜빡' 하는 효과
     IEnumerator PickedEffect(int p)
     {

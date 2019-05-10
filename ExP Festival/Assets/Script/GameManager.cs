@@ -20,7 +20,9 @@ public class GameManager : MonoBehaviour {
     public string player1_name;
     public string player2_name;
     public string mapName;
-
+    // 게임 종료 후 승리자를 저장.
+    public string winner;
+    // 버튼 입력 가능 여부를GM에서 관리함.
     public bool forbidEveryInput;
 
 
@@ -50,9 +52,14 @@ public class GameManager : MonoBehaviour {
         // 이 변수가 참이면, false될때까지 어떠한 버튼도 입력하지 못하게함.
         forbidEveryInput = true;
     }
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+
+    // 게임종료시, 이전 게임의 데이터는 모두 초기화한다. 위치는 맵 전부 공통으로 초기화 되므로 리셋하지 않음.
+    public void ResetGameData()
+    {
+        mapName = "";
+        winner = "";
+        player1_name = "";
+        player2_name = "";
+        forbidEveryInput = true;
+    }
 }
