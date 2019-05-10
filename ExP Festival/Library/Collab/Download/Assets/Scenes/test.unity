@@ -2153,6 +2153,52 @@ RectTransform:
   m_AnchoredPosition: {x: 168, y: 383.5}
   m_SizeDelta: {x: 800, y: 193}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1133382183
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1133382184}
+  - component: {fileID: 1133382185}
+  m_Layer: 0
+  m_Name: FightSceneManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1133382184
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1133382183}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1133382185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1133382183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dabc38ccc7c6f07468d2c7b993fe8647, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapList:
+  - {fileID: 313552492}
+  - {fileID: 192629902}
+  - {fileID: 1997688282}
+  - {fileID: 1726393616}
+  isDebugging: 0
 --- !u!1 &1263605993
 GameObject:
   m_ObjectHideFlags: 0
@@ -3480,6 +3526,7 @@ MonoBehaviour:
   player1_name: Cowboys
   player2_name: Nefer
   mapName: 
+  forbidEveryInput: 1
 --- !u!4 &1903184260
 Transform:
   m_ObjectHideFlags: 0
@@ -3903,7 +3950,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\uD0C0\uC774\uBA38(60\uCD08)"
+  m_Text: 60
 --- !u!222 &2069477792
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3922,6 +3969,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   time: 0
+  stop: 0
 --- !u!1 &2116436774
 GameObject:
   m_ObjectHideFlags: 0
