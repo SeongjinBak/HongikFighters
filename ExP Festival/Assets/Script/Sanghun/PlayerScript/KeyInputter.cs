@@ -11,7 +11,7 @@ public class KeyInputter : MonoBehaviour {
      
         if(playerNum == 1)
         {
-            playerKeys = new KeyCode[7]
+            playerKeys = new KeyCode[8]
             {
                 KeyCode.C,
                 KeyCode.V,
@@ -19,13 +19,14 @@ public class KeyInputter : MonoBehaviour {
                 KeyCode.A,
                 KeyCode.S,
                 KeyCode.D,
-                KeyCode.W
+                KeyCode.W,
+                KeyCode.Space
             };
         }
         else
         {
 
-            playerKeys = new KeyCode[7]
+            playerKeys = new KeyCode[8]
             {
                 KeyCode.I,
                 KeyCode.O,
@@ -33,7 +34,8 @@ public class KeyInputter : MonoBehaviour {
                 KeyCode.LeftArrow,
                 KeyCode.DownArrow,
                 KeyCode.RightArrow,
-                KeyCode.UpArrow
+                KeyCode.UpArrow,
+                KeyCode.L
             };
         }
     }

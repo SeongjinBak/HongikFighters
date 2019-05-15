@@ -35,12 +35,39 @@ public class CharacterSelection : MonoBehaviour {
     public GameObject[] group;
     // 액자 canvas 2개 , UI창에서의 layer 구분을 위함.
     public Canvas[] canvas;
+    // 페이드 인을 표시할 이미지 (검정)
+    public Image Fader;
+
     // 캐릭터 선택이 모두 완료 되었음을 나타내는 flag
     private bool isSelectionComplete;
 
     // 각 캐릭터들(동아리) 
     // Use this for initialization
     void Start () {
+
+        // 배경음악 재생
+        BackSoundManager.instance.ChangeBackGroundMusic(Resources.Load<AudioClip>("BackGroundMusic/pickScene"));
+        StartCoroutine(FadeInSelectionSceneInitializer());
+        
+        
+    }
+
+	
+	// Update is called once per frame
+	void Update () {
+        if(!isSelectionComplete && !GameManager.instance.forbidEveryInput)
+            CheckKeyInput();
+        CheckIsReady();
+     //   Debug.Log(player1_pointer + "  " + player2_pointer);
+     //   Debug.Log(isSelected[0] + " "+ isSelected[1]+ " "+ isSelected[2]+ " "+isSelected[3]);
+    }
+
+    // 페이드 인, 한 후 초기값 세팅
+    IEnumerator FadeInSelectionSceneInitializer()
+    {
+        // 페이드 인 전까진 키 못누르게 한다.
+        GameManager.instance.forbidEveryInput = true;
+
         isSelected = new bool[] { false, false, false, false };
         player1_pointer = 0;
         player2_pointer = isSelected.Length - 1;
@@ -52,20 +79,21 @@ public class CharacterSelection : MonoBehaviour {
 
         player1_choice = 10;
         player2_choice = 10;
-        
-        
-    }
 
-	
-	// Update is called once per frame
-	void Update () {
-        if(!isSelectionComplete)
-            CheckKeyInput();
-        CheckIsReady();
-     //   Debug.Log(player1_pointer + "  " + player2_pointer);
-     //   Debug.Log(isSelected[0] + " "+ isSelected[1]+ " "+ isSelected[2]+ " "+isSelected[3]);
-    }
+        // 0.6초에 걸쳐 씬을 페이드 아웃,
+        float dividend = 0.015f;
+        while (Fader.color.a >= 0)
+        {
+            Color color = Fader.color;
+            color.a -= dividend;
+            Fader.color = color;
+            yield return new WaitForSecondsRealtime(0.01f);
+        }
+        canvas[2].sortingOrder = 0;
+        // 페이드 인 후 키 누르게 함.
+        GameManager.instance.forbidEveryInput = false;
 
+    }
     // 동아리 가리키는 이미지(액자) 할당 및 초기화 함수
     void FramesInitialize()
     {
@@ -126,13 +154,13 @@ public class CharacterSelection : MonoBehaviour {
                 GameManager.instance.player1_name = "ExP";
                 break;
             case 1:
-                GameManager.instance.player1_name = "Nefer";
+                GameManager.instance.player1_name = "Taekwon";
                 break;
             case 2:
                 GameManager.instance.player1_name = "Cowboys";
                 break;
             case 3:
-                GameManager.instance.player1_name = "Taekwon";
+                GameManager.instance.player1_name = "Nefer";
                 break;
         }
         switch (player2_pointer)
@@ -141,19 +169,19 @@ public class CharacterSelection : MonoBehaviour {
                 GameManager.instance.player2_name = "ExP";
                 break;
             case 1:
-                GameManager.instance.player2_name = "Nefer";
+                GameManager.instance.player2_name = "Taekwon";
                 break;
             case 2:
                 GameManager.instance.player2_name = "Cowboys";
                 break;
             case 3:
-                GameManager.instance.player2_name = "Taekwon";
+                GameManager.instance.player2_name = "Nefer";
                 break;
         }
         // 맵을 랜덤으로 설정
         int num = Random.Range(0, 4);
         string[] map = new string[4] { "HongikGate", "Playground", "EternalSmile", "Cafenamu" };
-        GameManager.instance.mapName = map[num];
+        GameManager.instance.mapName = "map_" + map[num];
     }
     // 준비 완료 시, 선택 안된 동아리는 회색처리
     void SetUnselectedClubColorBlack()
@@ -168,16 +196,21 @@ public class CharacterSelection : MonoBehaviour {
             }
         }
         string name = "";
-        Image image;
+
+        //Image image;
         for (int i = 0; i < p.Length; i++)
         {
             if(p[i] >= 0)
-            {
+            {   /*
                 name = "Candidate" + (p[i] + 1).ToString();
                 image = GameObject.Find("/Canvas/PickList/" + name + "/Image").GetComponent<Image>();
                 image.color = Color.gray;
                 image = GameObject.Find("/Canvas/PickList/" + name).GetComponent<Image>();
                 image.color = Color.gray;
+                */
+                name = "fade" + (p[i] + 1).ToString();
+                GameObject.Find(name).GetComponent<Image>().enabled = true;
+
             }
         }
         
@@ -189,7 +222,9 @@ public class CharacterSelection : MonoBehaviour {
     // 준비 완료! 라는 이미지도 띄울 수 있음.
     IEnumerator NextSceneLoader()
     {
+        // 2초 기다림.
         yield return new WaitForSeconds(2f);
+      
         // 도움말 씬으로 넘어감
         SceneManager.LoadScene("HelpScript");
     }
@@ -216,7 +251,8 @@ public class CharacterSelection : MonoBehaviour {
                 player1_frame[player1_pointer].SetActive(true);
                 // 1p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(1);
-
+                // 사운드 재생
+                SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
             else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
             {
@@ -229,6 +265,8 @@ public class CharacterSelection : MonoBehaviour {
                 player1_frame[player1_pointer].SetActive(true);
                 // 1p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(1);
+                // 사운드 재생
+                SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
         }
 
@@ -252,6 +290,8 @@ public class CharacterSelection : MonoBehaviour {
                 player2_frame[player2_pointer].SetActive(true);
                 // 2p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(2);
+                // 사운드 재생
+                SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.RightArrow))
             {
@@ -264,6 +304,8 @@ public class CharacterSelection : MonoBehaviour {
                 player2_frame[player2_pointer].SetActive(true);
                 // 2p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(2);
+                // 사운드 재생
+                SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
         }
 
@@ -297,6 +339,8 @@ public class CharacterSelection : MonoBehaviour {
                     player1_choice = 10;
                 }
             }
+            // 사운드 재생
+            SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickLock"));
         }
         // 2P의 확인 버튼 탐지
         if (Input.GetKeyDown(KeyCode.I))
@@ -323,6 +367,8 @@ public class CharacterSelection : MonoBehaviour {
                     player2_choice = 10;
                 }
             }
+            // 사운드 재생
+            SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickLock"));
         }
     }
     // 액자의 sorting order를 정하는 함수
@@ -331,14 +377,14 @@ public class CharacterSelection : MonoBehaviour {
         // 현재 움직인게 1p인경우
         if(playerNum == 1)
         {
-            canvas[0].sortingOrder = 1;
-            canvas[1].sortingOrder = 0;
+            canvas[0].sortingOrder = 5;
+            canvas[1].sortingOrder = 4;
         }
         // 현재 움직인게 2p인경우
         else if(playerNum == 2)
         {
-            canvas[0].sortingOrder = 0;
-            canvas[1].sortingOrder = 1;
+            canvas[0].sortingOrder = 4;
+            canvas[1].sortingOrder = 5;
         }
     }
     // 캐릭터가 선택 되었을 경우, 캐릭터 창이 '깜빡' 하는 효과
@@ -368,9 +414,9 @@ public class CharacterSelection : MonoBehaviour {
         switch (pointer)
         {
             case 0: fileName = "ExP"; break;
-            case 1: fileName = "Nefer"; break;
+            case 1: fileName = "TaeKwon"; break;
             case 2: fileName = "Cowboys"; break;
-            case 3: fileName = "TaeKwon"; break;
+            case 3: fileName = "Nefer"; break;
         }
 
         if (fileName == "") return;
@@ -414,9 +460,9 @@ public class CharacterSelection : MonoBehaviour {
         switch (pointer)
         {
             case 0: fileName = "ExP"; break;
-            case 1: fileName = "Nefer"; break;
+            case 1: fileName = "TaeKwon"; break;
             case 2: fileName = "Cowboys"; break;
-            case 3: fileName = "TaeKwon"; break;
+            case 3: fileName = "Nefer"; break;
         }
 
         if (fileName == "") return;

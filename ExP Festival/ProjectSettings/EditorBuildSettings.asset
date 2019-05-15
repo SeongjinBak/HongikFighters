@@ -7,7 +7,10 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 0
     path: 
-    guid: 54faa5a8e69ad3041bc7450d8d7c0b14
+    guid: 00000000000000000000000000000000
+  - enabled: 1
+    path: Assets/Scenes/UI/MainStart.unity
+    guid: e0d3b3463de7a274199fbb43844f5b20
   - enabled: 1
     path: Assets/Scenes/test.unity
     guid: 9688f2b8fcd602b48b918719999b47da
@@ -15,11 +18,11 @@ EditorBuildSettings:
     path: Assets/Scenes/UI/CharacterSelectionWindow.unity
     guid: 49028b7bf63a4b34291c588f67a89389
   - enabled: 1
-    path: Assets/Scenes/UI/MainStart.unity
-    guid: e0d3b3463de7a274199fbb43844f5b20
-  - enabled: 1
     path: Assets/Scenes/UI/HelpScript.unity
     guid: bf00475d1b95bcd4f8899368909594b0
   - enabled: 1
     path: Assets/Scenes/UI/GameOverScene.unity
     guid: 8e5e84eba0a86b04db41e52670464365
+  - enabled: 1
+    path: Assets/Scenes/EasterEgg/VeryImportant.unity
+    guid: 5baa30e54e15d28409f5de5f1e5624eb

@@ -20,6 +20,7 @@ public class FrameManager : MonoBehaviour {
     public Player playerOne;
     public Player playerTwo;
     Player[] players;
+    [SerializeField]
     int[] roundScore;
     public Vector2[] playerPos;
     public SkillJson[] activatedSkill;  //현재 각 플레이어가 발동중인 스킬
@@ -45,7 +46,7 @@ public class FrameManager : MonoBehaviour {
     bool[] ready;       //양 플레이어가 시작 모션을 모두 끝냈는지 확인. Player에서 Restart로 값 바꿈
     int[] leftActiveFrame;
     int one;
-    float timeScale;
+    public float timeScale;
     float timeCount;
     public float endZoomSize;       //게임끝날때 줌하는거
     public float playZoomSize;      //게임중에 줌하는거
@@ -53,14 +54,22 @@ public class FrameManager : MonoBehaviour {
     
     // 타이머 오브젝트 저장
     public GameObject timer;
+    [SerializeField]
     // TimeLimited 조정을 위한 플래그 변수
     private bool timeFlag;
     // 게임 오버 판단
     private bool isGameOver;
-  
+    // 시간 표시창에있는 버튼 쿨타임 
+    public bool isRestartBtnClicked;
 
     // Use this for initialization
     void Start () {
+        isRestartBtnClicked =false;
+
+
+        // 배경음악 재생
+        BackSoundManager.instance.ChangeBackGroundMusic(Resources.Load<AudioClip>("BackGroundMusic/inGame"));
+
         // 프레임매니저 초기 호출시에 모든 입력 금지.
         GameManager.instance.forbidEveryInput = true;
         // 초기화
@@ -76,7 +85,7 @@ public class FrameManager : MonoBehaviour {
         // 아니면 카우보이 네페르로 게임 시작
         else
         {
-            SceneStart();
+           SceneStart();
         }
         //이거도 나중에 전체 총괄 매니저에서 해줄것.
 
@@ -84,8 +93,9 @@ public class FrameManager : MonoBehaviour {
 	}
 
     //게임의 최초시작단계
-    public void SceneStart(string name1 = "Cowboys", string name2 = "Nefer")
+    void SceneStart(string name1 = "Cowboys", string name2 = "Nefer")
     {
+        
         timeScale = 1;
         Time.timeScale = 1;
         playerOne = GameObject.Find("Player1").GetComponent<Player>();
@@ -100,13 +110,18 @@ public class FrameManager : MonoBehaviour {
         playerPos = new Vector2[2];
         roundScore = new int[2] { 0, 0 };
         gameOver = false;
-        RoundStart();
+        ScaleSetUpByPlayer();
+
+
+        RoundStart(false);
     }
 
-    
+    //public IEnumerator 
 
-    void RoundStart()
+    // 리스타트버튼으로 라운드 시작할 경우 true, 그외 false
+    void RoundStart(bool isRestartButtonClicked)
     {
+     
         timeFlag = false;
         roundOver = false;
         nowFrame = 0;
@@ -122,25 +137,66 @@ public class FrameManager : MonoBehaviour {
 
 
         // 라운드 시작시 시작위치 고정(gamemanager) 일단 디버깅을 위해 주석처리 후 하드코딩
-        Debug.Log("초기 시작위치 맵별로 조정하는거 필요함!");
         //players[0].transform.position = GameManager.instance.startPosition[0,0];
         //players[1].transform.position = GameManager.instance.startPosition[0,1];
-        players[0].transform.position = new Vector2(-50f, 4.09f);
-        players[1].transform.position = new Vector2(38.8f, 4.09f);
+        players[0].transform.position = new Vector2(-50f, 4.0f);
+        players[1].transform.position = new Vector2(50f, 4.0f);
+        players[0].transform.rotation = Quaternion.Euler(0, 0, 0);
+        players[1].transform.rotation = Quaternion.Euler(0, 180, 0);
+        if(isRestartButtonClicked == false)
+        {
 
+            players[0].OnGameStart(false);
+            players[1].OnGameStart(false);
 
-        players[0].OnGameStart();
-        players[1].OnGameStart();
+        }
+        else
+        {
+            players[0].OnGameStart(true);
+            players[1].OnGameStart(true);
 
+        }
         // 라운드 시작시 타이머 호출
-        timer.GetComponent<Timer>().CallTimer();
-
+        //timer.GetComponent<Timer>().CallTimer();
+        //timer.GetComponent<Timer>().time = 60f;
         //여기서 게임이 시작된다.
     }
-
-    //Player에서 승리, 패배모션이 끝나면 Restart를 호출함.
-    public void Restart(int readyPlayer)
+    // 플레이어에 따라서 스케일 조정.
+    void ScaleSetUpByPlayer()
     {
+        for(int i = 0; i < 2; i++)
+        {
+            if (players[i].playerName == "ExP")
+            {
+                Vector3 scale = players[i].transform.localScale;
+                scale.x = 3.25f;
+                scale.y = 3.25f;
+                scale.z = 3.25f;
+                players[i].transform.localScale = scale;
+            }
+            else if (players[i].playerName == "Nefer" || players[i].playerName == "Cowboys")
+            {
+                Vector3 scale = players[i].transform.localScale;
+                scale.x = 3.1f;
+                scale.y = 3.1f;
+                scale.z = 3.1f;
+                players[i].transform.localScale = scale;
+            }
+            else if(players[i].playerName == "TaeKwon")
+            {
+                Vector3 scale = players[i].transform.localScale;
+                scale.x = 4.3f;
+                scale.y = 4.3f;
+                scale.z = 4.3f;
+                players[i].transform.localScale = scale;
+            }
+        }
+        
+    }
+    //Player에서 승리, 패배모션이 끝나면 Restart를 호출함.
+    public IEnumerator Restart(int readyPlayer)
+    {
+        yield return new WaitForSecondsRealtime(0f);
         ready[readyPlayer] = true;
         if(ready[0] && ready[1])
         {
@@ -158,9 +214,9 @@ public class FrameManager : MonoBehaviour {
     }
     IEnumerator RestartWaiter()
     {
-        
-        yield return new WaitForSeconds(1.3f);
-        RoundStart();
+        // 빅토리 모션이 아니고, 빅토리 모션 후에 호출되는 코루틴임...!
+        yield return new WaitForSecondsRealtime(3f);
+        RoundStart(false);
     }
 
     // Update is called once per frame
@@ -192,9 +248,13 @@ public class FrameManager : MonoBehaviour {
             SkillActivate();
             // HpJudging();
             // 기존의 Hpjudging을 timeLimited 안에 넣었음. 시간이 0초 이상 남았을 경우 그냥 HPjudging이 실행됨.
-            TimeLimited();
+            if(timeFlag != true)
+                TimeLimited();
         }
-        TimeLimited();
+        if (timeFlag != true)
+            TimeLimited();
+        // 승리자 판단
+        CheckWinner();
     }
 
     void SlowMotionStart()
@@ -203,6 +263,16 @@ public class FrameManager : MonoBehaviour {
         Time.timeScale = timeScale;
         timeCount = 0;
    
+    }
+    // 현재 1p 2p가 몇번쨰이겼는지 저장.
+    public int RoundCount(int i)
+    {
+        if (i == 1)
+        {
+            return roundScore[0];
+        }
+        else
+            return roundScore[1];
     }
 
     void CameraPosChange()
@@ -349,6 +419,10 @@ public class FrameManager : MonoBehaviour {
             activateBool = true;
             //이제 skillActivate에서 이걸 처리해준다.
             //여기서 함수 실행하면 동시타 처리가 안되기 때문에 update에서 해준다.
+
+            // 내가 누구를 때렸긴 했음을 저장
+            //if (playerNum == 1) playerOne.isHit = true;
+            //else playerTwo.isHit = true;
         }
         activatedSkill[userNum] = skill;
         leftActiveFrame[userNum] = skill.activeFrame - indexOrder; 
@@ -364,12 +438,14 @@ public class FrameManager : MonoBehaviour {
         bool skillGuarded = false;      //가드시에 true
                                         //상대 궁모션을 킬지, 상대의 스킬 히트모션을 킬지에 중요하다
         
-        if (skillHitted[0])
+        if (skillHitted[0] && !playerTwo.isHit)
         {
+            playerTwo.isHit = true;
             //플레이어 1이 맞았는지. == 플레이어 2가 시전했는지
             damagedHP = players[0].SkillBeatenStart(activatedSkill[1], leftActiveFrame[1], one,players[1].buffRatio,out skillGuarded);
             if (!skillGuarded)
             {
+                Debug.Log("HERE?");
                 players[1].SkillHittedEffect(); //시전자한테 있다.
                 //시전자한테 스킬 이펙트가 있어서, 시전자가 해야된다.
             }
@@ -392,8 +468,9 @@ public class FrameManager : MonoBehaviour {
             }
             one = -1 * one; //동시타 고려
         }
-        if (skillHitted[1])
+        if (skillHitted[1] && !playerOne.isHit)
         {
+            playerOne.isHit = true;
             //플레이어 2가 맞았는지. == 플레이어 1이 시전했는지
             damagedHP = players[1].SkillBeatenStart(activatedSkill[0], leftActiveFrame[0], one, players[0].buffRatio, out skillGuarded);
             if (!skillGuarded)
@@ -509,7 +586,8 @@ public class FrameManager : MonoBehaviour {
 
         // HpJudging();
         // 기존의 Hpjudging을 timeLimited 안에 넣었음. 시간이 0초 이상 남았을 경우 그냥 HPjudging이 실행됨.
-        TimeLimited();
+        if (timeFlag != true)
+            TimeLimited();
     }
 
     // 60초 시간제한 확인하고 승리/패배모션 출력
@@ -524,50 +602,63 @@ public class FrameManager : MonoBehaviour {
             // 입력 정지
             GameManager.instance.forbidEveryInput = true;
 
-            // timeflag를 true로 함으로써 중복호출 방지
-            timeFlag = true;
-            // 1p hp > 2p hp
-            if(players[0].nowHealthPoint > players[1].nowHealthPoint)
+            
+            if(timeFlag == false)
             {
-                SlowMotionStart();
-                debugText.text = "1이 이김";
-                players[0].GameOverStart(true);
-                players[1].GameOverStart(false);
-                roundScore[0]++;
-                CameraZoomStart();
-            }
-            else if (players[0].nowHealthPoint < players[1].nowHealthPoint)
-            {
-                SlowMotionStart();
-                debugText.text = "2가 이김";
-                players[0].GameOverStart(false);
-                players[1].GameOverStart(true);
-                roundScore[1]++;
-                CameraZoomStart();
-            }
-            // 1p hp == 2p hp
-            else
-            {
-                Debug.Log("꿍극기 계수 판단");
-                // 1p ult > = 2p ult(궁 포인트가 1이 더 높거나 1 == 2 인 경우)
-                if(players[0].nowUltPoint >= players[1].nowUltPoint)
+                // timeflag를 true로 함으로써 중복호출 방지
+                timeFlag = true;
+                // 1p hp > 2p hp
+                if (players[0].NowHpGaugeInfo() > players[1].NowHpGaugeInfo())
                 {
                     SlowMotionStart();
-                    debugText.text = "1이 이김";
+                    Debug.Log(  "1이 이김");
+                    // 라운드 회차 증가
+                    GameManager.instance.roundNum++;
                     players[0].GameOverStart(true);
                     players[1].GameOverStart(false);
                     roundScore[0]++;
                     CameraZoomStart();
                 }
-                else if (players[0].nowUltPoint < players[1].nowUltPoint)
+                else if (players[0].NowHpGaugeInfo() < players[1].NowHpGaugeInfo())
                 {
                     SlowMotionStart();
-                    debugText.text = "2가 이김";
+                    Debug.Log("2이 이김");
+                    // 라운드 회차 증가
+                    GameManager.instance.roundNum++;
                     players[0].GameOverStart(false);
                     players[1].GameOverStart(true);
                     roundScore[1]++;
                     CameraZoomStart();
                 }
+                // 1p hp == 2p hp
+                else
+                {
+                    Debug.Log("꿍극기 계수 판단");
+                    // 1p ult > = 2p ult(궁 포인트가 1이 더 높거나 1 == 2 인 경우)
+                    if (players[0].NowUltGaugeInfo() >= players[1].NowUltGaugeInfo())
+                    {
+                        SlowMotionStart();
+                        Debug.Log("1이 이김");
+                        // 라운드 회차 증가
+                        GameManager.instance.roundNum++;
+                        players[0].GameOverStart(true);
+                        players[1].GameOverStart(false);
+                        roundScore[0]++;
+                        CameraZoomStart();
+                    }
+                    else if (players[0].NowUltGaugeInfo() < players[1].NowUltGaugeInfo())
+                    {
+                        SlowMotionStart();
+                        Debug.Log("2이 이김");
+                        // 라운드 회차 증가
+                        GameManager.instance.roundNum++;
+                        players[0].GameOverStart(false);
+                        players[1].GameOverStart(true);
+                        roundScore[1]++;
+                        CameraZoomStart();
+                    }
+                }
+                timer.GetComponent<Timer>().time = 61f;
             }
         }
         // 60초 모두 흐르지 않았다면
@@ -603,7 +694,9 @@ public class FrameManager : MonoBehaviour {
 
             SlowMotionStart();
             //double KO
-            debugText.text = "더블ko";
+            Debug.Log("더블 KO");
+            // 라운드 회차 증가
+            GameManager.instance.roundNum++;
             players[0].GameOverStart(false);
             players[1].GameOverStart(false);
             roundScore[0]++;
@@ -619,7 +712,9 @@ public class FrameManager : MonoBehaviour {
             {// 입력 정지
                 GameManager.instance.forbidEveryInput = true;
                 SlowMotionStart();
-                debugText.text = "2가 이김";
+                Debug.Log("2이 이김");
+                // 라운드 회차 증가
+                GameManager.instance.roundNum++;
                 players[0].GameOverStart(false);
                 players[1].GameOverStart(true);
                 roundScore[1]++;
@@ -629,38 +724,18 @@ public class FrameManager : MonoBehaviour {
             {// 입력 정지
                 GameManager.instance.forbidEveryInput = true;
                 SlowMotionStart();
-                debugText.text = "1이 이김";
+                Debug.Log("1이 이김");
+                // 라운드 회차 증가
+                GameManager.instance.roundNum++;
                 players[0].GameOverStart(true);
                 players[1].GameOverStart(false);
                 roundScore[0]++;
                 CameraZoomStart();
             }
         }
-        foreach (int i in roundScore)
-        {
-            if (i == endRound)
-            {
 
-                gameOver = true;
-                debugText.text = "게임오버!";
-
-                // 게임 오버시 키 입력 중단시키고, 다음 라운드로 못가게 해야 함. 
-                // gameover활성화
-                isGameOver = true;
-                GameManager.instance.forbidEveryInput = true;
-
-                // 승리자를 gameManager에 저장.
-                if (i == 0)
-                    GameManager.instance.winner = "Player 1";
-                else
-                    GameManager.instance.winner = "Player 2";
-
-
-                // 다음씬
-                StartCoroutine(GameOverWaiter());
-
-            }
-        }
+        // 승리자 판단
+        //CheckWinner();
 
         hpText[0].text = players[0].nowHealthPoint.ToString("N1");
         hpText[1].text = players[1].nowHealthPoint.ToString("N1");
@@ -670,10 +745,42 @@ public class FrameManager : MonoBehaviour {
         scoreText[1].text = roundScore[1].ToString();
     }
 
+    void CheckWinner()
+    {
+        foreach (int i in roundScore)
+        {
+            if (i >= endRound)
+            {
+
+                gameOver = true;
+                Debug.Log("게임오버");
+
+                // 게임 오버시 키 입력 중단시키고, 다음 라운드로 못가게 해야 함. 
+                // gameover활성화
+                isGameOver = true;
+                GameManager.instance.forbidEveryInput = true;
+
+                // 승리자를 gameManager에 저장.
+                if (roundScore[0] == i)
+                    GameManager.instance.winner = "Player 1";
+                else if (roundScore[1] == i)
+                    GameManager.instance.winner = "Player 2";
+                else
+                {
+                    Debug.Log("승리자 카운팅 오류");
+                }
+
+                // 다음씬
+                StartCoroutine(GameOverWaiter());
+
+            }
+        }
+    }
+
     IEnumerator GameOverWaiter()
     {
 
-        yield return new WaitForSeconds(1.3f);
+        yield return new WaitForSeconds(3f);
         SceneManager.LoadScene("GameOverScene");
     }
     
@@ -689,4 +796,16 @@ public class FrameManager : MonoBehaviour {
         Gizmos.DrawCube(gizmoHitbox, gizmoRange);
     }
 
+    // 버튼 누르면 라운드 재시작.
+    public void ReStartRound()
+    {
+        if (!isRestartBtnClicked)
+        {
+            isRestartBtnClicked = true;
+            
+            // 이거는 리스타트 버튼 클릭이다. true
+            Debug.Log("리스타트 클릭");
+            RoundStart(true);
+        }
+    }
 }

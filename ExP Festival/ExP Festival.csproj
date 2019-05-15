@@ -235,7 +235,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Script\GameManager.cs" />
     <Compile Include="Assets\Script\Sanghun\JsonBuilder.cs" />
     <Compile Include="Assets\Script\Sanghun\ManagerScript\FrameManager.cs" />
     <Compile Include="Assets\Script\Sanghun\PlayerScript\KeyInputter.cs" />
@@ -243,16 +242,20 @@
     <Compile Include="Assets\Script\Sanghun\PlayerScript\PlayerSound.cs" />
     <Compile Include="Assets\Script\Sanghun\SkillClass\PlayerJson.cs" />
     <Compile Include="Assets\Script\Sanghun\SkillClass\SkillJson.cs" />
+    <Compile Include="Assets\Script\Seongjin\BackSoundManager.cs" />
+    <Compile Include="Assets\Script\Seongjin\GameManager.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\CharacterSelection.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\FightSceneManager.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\GameOverManager.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\HelpScriptManager.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\MainStart.cs" />
+    <Compile Include="Assets\Script\Seongjin\UI_Scripts\SoundManager.cs" />
     <Compile Include="Assets\Script\Seongjin\UI_Scripts\Timer.cs" />
+    <Compile Include="Assets\Script\Seongjin\UI_Scripts\VeryImportantScript.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Script\Sanghun\dumy.txt" />
-    <None Include="Assets\StreamingAssets\dumy.txt" />
+    <None Include="Assets\Script\StreamingAssets\dumy.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />

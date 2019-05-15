@@ -8,7 +8,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.UI;
 //키 인푸터 상속 이유 : 키 인푸터는 UI화면에서 캐릭터 고를때도 쓸것이다.
 //그 때도 다른 스크립트 파서 키 인푸터 상속시키면 편하다.
 public class Player : KeyInputter {
@@ -31,7 +31,7 @@ public class Player : KeyInputter {
      * (19.04.17 이전에 작성)
      */
 
-    
+    public bool isHit;      // 내가 누굴 때렸는지 저장.
     public string playerName;    //로드에 쓰려고. 플레이어 넘버는 키 인푸터에 있다.
     public float healthPoint;       //최초 hp
     public float nowHealthPoint;    //현재 hp
@@ -57,15 +57,28 @@ public class Player : KeyInputter {
                                     //FrameManager에서 알아냄
     bool buffed;
 
+    // 페이드 인
+    public Image Fader;
+    // 버프 이미지 출력을 위한 sprite renderer
+    public SpriteRenderer buffSr;
+    public SpriteRenderer buffReadySr;
 
     protected List<CommandFrame> latestCommand;    //가장 최근에 입력받은 커맨드. ZZ ZZZ을 판단해야 하기 때문.
     public SkillJson[] skillArray;              //스킬들의 총 배열
     public GameObject skillEffectObj;           //히트박스에 무슨 스프라이트 들어갈지.
     SkillJson dumySkill;    //디버그용
     SkillJson oponentSkill; //내가 뭐에 맞고있는건지
+    [SerializeField]
+    private string preHittedSkill;  // 내가 뭐에 쳐 "맞았었는지" 저장함
+
     Vector2 skillKnockBack;
     FrameManager frameManager;
 
+    //자신의 투사체 이미지 sr
+    public SpriteRenderer projectileSr;
+    // 투사체 애니메이션 함수가 중복수행 되는걸 막기 위한 변수
+    public bool isProjectileThrew;
+    [SerializeField]
     protected State nowState;     //현재 어느상태인지
     protected enum State
     {
@@ -133,8 +146,9 @@ public class Player : KeyInputter {
     //발동이 뒤에붙은 이유는 늦게만들어졌기 때문이다
     int spriteChangeCounter = 0; //갭에 이르는 상태가 되었다면 스프라이트 교체.
     Sprite[] nowSpriteArr;  //현재 스프라이트 뭔지.
-
+    [SerializeField]
     bool movingRight = true;   // 움직일 떄오른쪽 보고있는지
+    [SerializeField]
     bool skillRight = true;     //스킬중에 오른쪽 보고있는지
     int waitingSkillIndex = -1; //대기중인게 없으면 -1. 있으면 그 스킬의 인덱스. 스킬 끝내자마자 피격 맞을때 중요할거같다.
     Sprite[] moveSpriteArr;     //무브에 쓰는 스프라이트
@@ -149,7 +163,9 @@ public class Player : KeyInputter {
     int nowGabIndex;            //무브랑 아이들 하나로 합치려고
 
     PlayerSound playerSound;    //직접만든 사운드 객체. spriteChangeGab의 인덱스를 공유함. 자세한건 클래스 내에서 확인.
+
     new Collider2D collider;        //콜라이더 꺼줘야한다. mono에 같은이름있어서 new 써줬음.
+    [SerializeField]
     Collider2D floor;               //바닥이랑 닿을 때 콜라이더 사라지면 큰일이다. 바닥콜라이더를 받는다.
     public int downDashColFrame;     //동훈이가 넣어줘야하는값. 몇프레임동안 꺼줄것인가
     public float downDashForce;     //아래 대쉬 포스
@@ -160,16 +176,31 @@ public class Player : KeyInputter {
     public SpriteRenderer mapEffectRenderer;      //막 어두워지는 이펙트같은거
     bool hittedEffectCorRunning;
     public int fallDownInvulnerableFrame;
-
+    int nowRoundNum;
     /*밑 키 한번 누르면서 꾹 누르고 있으면 가드
 
+
+
 밑 키 두번 빠르게 누르면 2층일때 하단 플랫폼으로 하강*/
+
+    //인장, 버프 코루틴
+    IEnumerator BuffCor;
+    IEnumerator MarkCor;
 
     public bool loadSkill;
 
     private void Start()
     {
-
+        BuffCor = buffCor();
+        MarkCor = HittedEffectCor();
+        if(playerNum == 2)
+        {
+            movingRight = false;
+            skillRight = false;
+        }
+        isHit = false;
+        preHittedSkill = "";
+        isProjectileThrew = false;
         //OnGameStart();  //현재는 여기에 와있지만. 나중에는 게임 시작할 때 프레임매니저에서 실행해줘야함.
     }
 
@@ -215,14 +246,23 @@ public class Player : KeyInputter {
         //spriteChangeGab[7] = load.guardFrameGap;
 
         //오디오 넣어주기
-        AudioSource[] sources = GetComponents<AudioSource>();
+        AudioSource[] sources = new AudioSource[2];
+        sources[0] = GetComponent<AudioSource>();
+        sources[1] = transform.GetChild(1).GetComponent<AudioSource>();
         //보이스하고 사운드이펙트 두 개가 필요하다
         playerSound = new PlayerSound();
         playerSound.SoundLoad(playerName, sources[0], sources[1]);
     }
 
-    public void OnGameStart()
+
+    // restart버튼 클릭에 의해 불려졌을 경우 true, else false.
+    public void OnGameStart(bool isRestartButtonClicked)
     {
+
+
+        float tmpHp = nowHealthPoint;
+        float tmpUlt = nowUltPoint;
+      
         //위치잡기->프레이밍 시작.
         healthPoint = 100;
         nowHealthPoint = 100;
@@ -242,7 +282,7 @@ public class Player : KeyInputter {
         frameManager = GameObject.Find("FrameManager").GetComponent<FrameManager>();
         spriteChangeGab = new int[motionCounts];
         string enemyName;
-        if(playerNum == 1)
+        if (playerNum == 1)
         {
             enemyName = "Player2";
         }
@@ -251,14 +291,13 @@ public class Player : KeyInputter {
             enemyName = "Player1";
         }
         hittedEffectRenderer = GameObject.Find(enemyName).transform.GetChild(2).GetComponent<SpriteRenderer>();
+        
         //2번이 히티드 이펙트다.
         mapEffectRenderer = GameObject.Find("MapEffect").GetComponent<SpriteRenderer>();
         //playerName = gameObject.name;
 
         //시작할 때 resource load가 많아서 렉이 걸릴 수 있지만, 실행중에는 절대 없다.
-        float time = Time.time;
-        Debug.Log("시작시간 : " + time);
-        
+
         moveSpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Move");
         idleSpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Idle");
         jumpSpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Jump");
@@ -268,9 +307,10 @@ public class Player : KeyInputter {
         dashSpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Dash");
         gameStartSpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/GameStart");
         victorySpriteArr = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Victory");
-        Debug.Log("소요시간 : " + (time - Time.time));
         KeyRefresh();
         //keyInputter의 함수이다. 플레이어 1인지, 2인지에 따라 키를 바꿔준다.
+
+
 
 
         //디버깅 때 쓰려고 만든 임시 스킬들
@@ -344,15 +384,37 @@ public class Player : KeyInputter {
         {
             jsonLoad();
         }
-       
+
+
+        if (isRestartButtonClicked)
+        {
+            frameManager.timer.GetComponent<Timer>().StopTimer();
+            nowUltPoint = tmpUlt;
+            nowHealthPoint = tmpHp;
+            hittedEffectRenderer.sprite = null;
+          
+        }
+
+
+
 
         //nowState = State.Ready; //시작 전이 ready 이다
         buffed = false;
-
-        StartMotionStart();    //추후에 3 2 1 Start등 준비모션으로 바뀔것이다.
+        if (GameManager.instance.roundNum == 0)
+        {
+            if (!isRestartButtonClicked)
+                StartCoroutine(StartMotionStart(true));    //추후에 3 2 1 Start등 준비모션으로 바뀔것이다.
+            else
+                StartCoroutine(StartMotionStart(false));
+        }
+        else
+        {
+            StartCoroutine(StartMotionStart(false));    //추후에 3 2 1 Start등 준비모션으로 바뀔것이다.
+        }
     }
 
     //한 라운드 시작할 때 FrameManager에서 실행.
+    // 아무데서도 호출하지않음.
     public void OnRoundStart()
     {
         healthPoint = 100;
@@ -372,15 +434,18 @@ public class Player : KeyInputter {
 
         //nowState = State.Ready; //시작 전이 ready 이다
         buffed = false;
-
-        StartMotionStart();    //추후에 3 2 1 Start등 준비모션으로 바뀔것이다.
+        Debug.Log("ON ROUND START");
+        StartCoroutine(StartMotionStart(false));    //추후에 3 2 1 Start등 준비모션으로 바뀔것이다.
     }
 
     int startMotionEndFrame = 0;
-    public void StartMotionStart()
+    IEnumerator StartMotionStart(bool isFirst)
     {
-        // 시작모션 전부 출력을 위해 30프레임 더 기다림.
-        startMotionEndFrame = FrameManager.nowFrame + spriteChangeGab[7] * gameStartSpriteArr.Length ;
+        //StopCoroutine(MarkCor);
+        //StopCoroutine(BuffCor);
+        nowRoundNum = GameManager.instance.roundNum;
+        hittedEffectRenderer.sprite = null;
+        if (buffReadySr.enabled == true) buffReadySr.sprite = null;
         //시작모션은 갭 * 모션 프레임의 갯수 만큼 진행한다.
         nowState = State.Ready;
         spriteChangeCounter = spriteChangeGab[7];
@@ -389,7 +454,122 @@ public class Player : KeyInputter {
         nowGabIndex = 7;
         spriteCount = nowSpriteArr.Length;
         playerSound.SoundPlay(0, false);
+        // 스파게티지만, 프레임 count를 중간에 끊을 수 없어 0번째 이미지로 초기화 시켰음.
+        spriteRenderer.sprite = nowSpriteArr[0];
+        callEveryFrame = DoNothing;
+        if(isFirst == true)
+        {
+            if (this.gameObject.name == "Player1")
+            {
+                // 1초에 걸쳐 씬을 페이드 아웃,
+                float dividend = 0.01f;
+                while (Fader.color.a >= 0)
+                {
+                    Color color = Fader.color;
+                    color.a -= dividend;
+                    Fader.color = color;
+                    yield return new WaitForSecondsRealtime(0.01f);
+                }
+                Debug.Log("zzsadasdd");
+            }
+
+            else
+            {
+                float time = 1f;
+                while (time >= 0f)
+                {
+                    yield return new WaitForSecondsRealtime(0.01f);
+                    time -= 0.01f;
+                }
+            }
+        }
+        // 첫번째 라운드이고, 현재 플레이어의 이름이 player1인경우.
+        
+        callEveryFrame = DoNothing;
+        // Debug.Log("문제점 : 2번쨰 라운드 시작시 시간 60으로 세팅 안돔.");
+
+
+        frameManager.timer.GetComponent<Timer>().TimeSet60();
+        // 1. 캐릭터가 게임 시작 준비 동작과 보이스를 출력한다. 그 후 1초를 대기한다.
+        yield return new WaitForSeconds(1f);
+        //2.대기가 끝나면 필터를 씌우고 Round { N} 텍스트를 일정한 속도로 재생한다.
+        //필터 렌더링
+        Image filter = GameObject.Find("Filter").GetComponent<Image>();
+        filter.enabled = true;
+        // 라운드 렌더링
+        string nowRound = "Round" + (GameManager.instance.roundNum + 1).ToString();
+        Sprite[] roundImages = Resources.LoadAll<Sprite>("InGame_Round/" + nowRound);
+        Image[] roundRenderer = GameObject.Find("RoundRenderer").GetComponentsInChildren<Image>();
+        Debug.Log(roundRenderer.Length);
+        // 라운드 렌더링 시작
+        for (int i = 0; i < 12; i++)
+        {
+            roundRenderer[i].enabled = true;
+            roundRenderer[i].sprite = roundImages[i];
+            yield return new WaitForSecondsRealtime(0.05f);
+        }
+        // 라운드 렌더링 종료
+        for (int i = 0; i < 12; i++)
+        {
+            roundRenderer[i].enabled = false;
+        }
+        // 그냥 눈에 보기 좋게, 이전 렌더링 끝나면 약간 기다림.
+        yield return new WaitForSecondsRealtime(0.05f);
+
+        //3. Round {N} 재생이 끝나면 Ready 텍스트를 일정한 속도로 재생한다.
+        Sprite[] readyImages = Resources.LoadAll<Sprite>("InGame_Round/Ready");
+        Image[] readyRenderer = GameObject.Find("ReadyRenderer").GetComponentsInChildren<Image>();
+
+        // 레디 렌더링 시작
+        for (int i = 0; i < 11; i++)
+        {
+            readyRenderer[i].enabled = true;
+            readyRenderer[i].sprite = readyImages[i];
+            yield return new WaitForSecondsRealtime(0.05f);
+        }
+        // 레디 렌더링 종료
+        for (int i = 0; i < 12; i++)
+        {
+            readyRenderer[i].enabled = false;
+        }
+        // 그냥 눈에 보기 좋게, 이전 렌더링 끝나면 약간 기다림.
+        yield return new WaitForSecondsRealtime(0.05f);
+
+        //4. Ready 재생이 끝나면 Fight 텍스트를 일정한 속도로 재생한다. 
+        Sprite[] fightImages = Resources.LoadAll<Sprite>("InGame_Round/Fight");
+        Image[] fightRenderer = GameObject.Find("FightRenderer").GetComponentsInChildren<Image>();
+        // 파이트 렌더링 시작
+        for (int i = 0; i < 12; i++)
+        {
+            fightRenderer[i].enabled = true;
+            fightRenderer[i].sprite = fightImages[i];
+            yield return new WaitForSecondsRealtime(0.05f);
+        }
+        //파이트 렌더링 종료
+        for (int i = 0; i < 12; i++)
+        {
+            fightRenderer[i].enabled = false;
+        }
+        // 그냥 눈에 보기 좋게, 이전 렌더링 끝나면 약간 기다림.
+        yield return new WaitForSecondsRealtime(0.05f);
+        //5. Fight 텍스트 이미지의 가장 마지막 이미지 즉, fight_12에 도달하면 씌웠던 필터를 끈다. 
+        filter.enabled = false;
+
+
+
+        // 시작모션 전부 출력을 위해 30프레임 더 기다림.
+        // 190510, 페이드 인 구현을 위해 어쩔수 없이 105 추가했음. 죄송합니다.....다 얽혀있어서...(성진)
+        startMotionEndFrame = FrameManager.nowFrame + spriteChangeGab[7] * gameStartSpriteArr.Length;
+        //
+        // Debug.Log("2번째 라운드부터 시작모션이 출력이 안됨;;큰일");
+        if (isFirst == true || isFirst == false)
+        {
+            //startMotionEndFrame += 105;
+            if (this.name == "Player1")
+                frameManager.timer.GetComponent<Timer>().CallTimer();
+        }
         callEveryFrame = StartMotion;
+        frameManager.isRestartBtnClicked = false;
     }
 
     public void StartMotion()
@@ -410,6 +590,17 @@ public class Player : KeyInputter {
         GameManager.instance.forbidEveryInput = false;
     }
 
+    // 궁극기 게이지 정보를 다른 스크립트에서 소환할 수 있게 함,
+    public float NowUltGaugeInfo()
+    {
+        return nowUltPoint / ultPoint;
+    }
+    // 체력 정보를 다른 스크립트에서 소환할 수 있게
+    public float NowHpGaugeInfo()
+    {
+        return nowHealthPoint / healthPoint;
+    }
+
     //callEveryFrame이 모션을 불러온다면, OnEveryFrame은 입력을 받고, callEveryFrame을 실행한다.
     public void OnEveryFrame()
     {
@@ -426,7 +617,7 @@ public class Player : KeyInputter {
     void GetInput()
     {
 
-        if (Input.GetKey(playerKeys[0]) && Input.GetKey(playerKeys[1]) && Input.GetKey(playerKeys[2]))
+        if (Input.GetKeyDown(playerKeys[7]))
         {
             if (nowUltPoint == ultPoint)
             {
@@ -656,7 +847,9 @@ public class Player : KeyInputter {
     {
         //파라미터 받고 코루틴 실행하려구
         inputStartFrame = FrameManager.nowFrame + inputStart;
+        
         clearFrame = FrameManager.nowFrame + inputEnd;
+        Debug.Log("플레이어 : " + playerName + " 현재 프레임 : " + FrameManager.nowFrame + " 인풋스타트 : " + inputStart + "클리어 : " + clearFrame);
         if (corRunning)
         {
             StopCoroutine(commandClearer);
@@ -849,6 +1042,8 @@ public class Player : KeyInputter {
 
     public void GuardEnd()
     {
+        if(invulnerable == true)
+             invulnerable = false;
         if (jumping)
         {
             JumpStart();
@@ -898,6 +1093,7 @@ public class Player : KeyInputter {
         dashFrameCounter++;
         if(dashFrameCounter >= dashFrameLength)
         {
+            //Debug.Log("대시 함수 실시");
             nowState = State.Wait;
             if (jumping)
             {
@@ -905,6 +1101,7 @@ public class Player : KeyInputter {
             }
             else
             {
+                Debug.Log("Dash idle");
                 IdleStart();
             }
             
@@ -923,6 +1120,7 @@ public class Player : KeyInputter {
         }
 
         //invulnerable = false; 일단 꺼 보자
+      //  Debug.Log("Idle Start함수 실시");
         nowState = State.Wait;
         spriteChangeCounter = spriteChangeGab[2];
         nowSpriteIndex = 0;
@@ -931,6 +1129,13 @@ public class Player : KeyInputter {
         nowGabIndex = 2;
         playerSound.StopLoop();
         callEveryFrame = SpriteChanger;
+        // idle상태일때에도 무적변수가 켜져있으면 끈다.
+
+         if (this.invulnerable)
+       {
+            this.invulnerable = false;
+        }
+        
     }
 
     void DownDashStart()
@@ -1008,7 +1213,7 @@ public class Player : KeyInputter {
             rigidBody.AddForce(Vector2.up * jumpAccelaration, ForceMode2D.Impulse);
             jumping = true;
             nowState = State.Jump;
-
+            Debug.Log("점프!");
             // 땅을 밟을수 있게 하는 콜라이더를 제거(end코루틴에서 다시 on함.)
              groundStandingCollider.enabled = false;
             //groundStandingCollider.isTrigger = true;
@@ -1094,6 +1299,7 @@ public class Player : KeyInputter {
             yield return null;
         }
         jumpCorRunning = false;
+   //     Debug.Log("jump idle 시작");
         IdleStart();
     }
 
@@ -1107,7 +1313,7 @@ public class Player : KeyInputter {
             //대기중인 변수를 만들되, 그걸 int로 해서 스킬 인덱스로 단 하나 저장하자.
             //대기중인 스킬이 없다면, 그 인덱스를 -1로 정하고, 대기중이라면 인덱스를 저장해준다.
 
-            CommandListClear(500, 500); //그 저장을 여기서 해주면 된다.
+            CommandListClear(50, 50 ); //그 저장을 여기서 해주면 된다.
             if (waitingSkillIndex == -1)
             {
                 waitingSkillIndex = index;
@@ -1134,6 +1340,15 @@ public class Player : KeyInputter {
             spriteChangeCounter = 0;        //카운터 초기화
 
             Debug.Log(skill.command + " : 발동");
+
+            // 현재 스킬이 네페르의 c(버프)스킬이라면, 스포트 라이트 이미지 켠다.
+            if (skill.command == "c" || skill.command == "C")
+            {
+                if(this.playerName == "Nefer")
+                {
+                    buffReadySr.enabled = true;
+                }
+            }
             //총 8장이라 보자
 
 
@@ -1215,9 +1430,13 @@ public class Player : KeyInputter {
 
     public void SkillEnd()
     {
+        // 누군가를 안때렸음으로 변경
+        isHit = false;
+
         //스킬이 끝났을 때 호출.
         nowState = State.Wait;      //이걸 먼저해줘야 한다. 그래야 다른데서 안씹힌다.
         skillEffectObj.SetActive(false);    //이펙트 꺼주고
+        isProjectileThrew = false;  // 투사체 안날아간다고 해주고
         if (waitingSkillIndex == -1)
         {
             //예약스킬이 없을 때
@@ -1227,6 +1446,8 @@ public class Player : KeyInputter {
             }
             else
             {
+
+          //      Debug.Log(playerNum + " skill end idle end");
                 IdleStart();
             }
 
@@ -1268,24 +1489,31 @@ public class Player : KeyInputter {
         }
     }
 
-
+    
     IEnumerator HittedEffectCor()
     {
         yield return null;  //1프레임을 시작에 기다려줘야 후딜중에 맞을 때 이중코루틴이 걸리지 않는다.
         hittedEffectCorRunning = true;
-
+     
         SkillJson skill = skillArray[nowSkillIndex];
         Sprite[] array = skill.hittedSpriteArray;
         int nowIndex = 0;
         int count = skillArray[nowSkillIndex].hittedSpriteArray.Length;
-        int end =  endFrame; //코루틴 중간에 값이바뀔 우려가 있어서 그랬다.
-        int gab = (endFrame - FrameManager.nowFrame) / count;
+        int end = endFrame; //코루틴 중간에 값이바뀔 우려가 있어서 그랬다.
+        int gab = (endFrame - FrameManager.nowFrame) - 5;
+        if (gab <= 0)
+        {
+            gab = (endFrame - FrameManager.nowFrame) / count;
+
+        }
         int counter = 0;
+        Debug.Log("표식(Hitted Sprite시작부분");
         hittedEffectRenderer.sprite = array[nowIndex];
         nowIndex++;
 
         while (FrameManager.nowFrame <= end && hittedEffectCorRunning)
         {
+            if (nowRoundNum != GameManager.instance.roundNum) break;
             Debug.Log(end - FrameManager.nowFrame);
             counter++;
             if (counter >= gab)
@@ -1402,8 +1630,23 @@ public class Player : KeyInputter {
             }
             else
             {
+                
                 //스킬범위를 벗어났다면 끝내야지.
                 SkillEnd();
+                
+            }
+
+            if (skillArray[nowSkillIndex].projectileEffect)
+            {
+                if (nowState != State.Wait)
+                {
+                    skillEffectObj.SetActive(true);
+                    StartCoroutine(ProjectileAnimation(true));
+                    //  Debug.Log("0511 13:56 투사체 발사");
+                    //이펙트 켜주는거는 최초 한 번만 하고싶은데, 그러면 1프레임 일찍 켜져버려서 힘들다.
+
+
+                }
             }
         }
         else
@@ -1463,7 +1706,7 @@ public class Player : KeyInputter {
         lerpCounter++;
         Vector2 moveDistance = Vector2.Lerp(basePosition, targetPosition, lerpCounter / positionChangeLerp);
         transform.position = moveDistance;*/
-        
+       
         spriteChangeCounter++;  //1프레임 올려주고.
         if (FrameManager.nowFrame <= startFrame)
         {
@@ -1480,6 +1723,7 @@ public class Player : KeyInputter {
                 }
                 spriteChangeCounter = 0;    //카운터를 0으로 초기화.
             }
+
         }
         else if (FrameManager.nowFrame <= activeFrame)
         {
@@ -1491,7 +1735,7 @@ public class Player : KeyInputter {
                 //여기서 그냥 FrameManager.nowFrame을 빼버리면 0값부터 시작을 안해서, skill.activeFrame을 더해주어야한다.
                 frameManager.SkillRequest(playerNum, skillArray[nowSkillIndex], FrameManager.nowFrame - activeFrame + skillArray[nowSkillIndex].activeFrame - 1, skillRight);
             }
-            else if(skillArray[nowSkillIndex].skillType == 1)
+            else if(skillArray[nowSkillIndex].skillType == 1) // 1은 버프타입.
             {
                 if(FrameManager.nowFrame == activeFrame)
                 {
@@ -1501,7 +1745,19 @@ public class Player : KeyInputter {
                     //버프는 한 번만 써준다
                 }
             }
-            
+
+            if (skillArray[nowSkillIndex].projectileEffect)
+            {
+                skillEffectObj.SetActive(true);
+               // Debug.Log(skillArray[nowSkillIndex].command);
+                if(skillArray[nowSkillIndex].command == "zzzz" && playerName == "Nefer")
+                    StartCoroutine(ProjectileAnimation(false, true));
+                else
+                    StartCoroutine(ProjectileAnimation(false));
+                
+           //     Debug.Log("투사체 발사");
+                //이펙트 켜주는거는 최초 한 번만 하고싶은데, 그러면 1프레임 일찍 켜져버려서 힘들다.
+            }
             if (spriteChangeCounter >= spriteChangeGab[9])
             {
                 nowSpriteIndex++;           //갭에 도달했으면, 인덱스1올려주고 
@@ -1512,12 +1768,8 @@ public class Player : KeyInputter {
                 }
                 spriteChangeCounter = 0;    //카운터를 0으로 초기화.
             }
-
-            if (skillArray[nowSkillIndex].projectileEffect)
-            {
-                skillEffectObj.SetActive(true);
-                //이펙트 켜주는거는 최초 한 번만 하고싶은데, 그러면 1프레임 일찍 켜져버려서 힘들다.
-            }
+         
+            
         }
         else if (FrameManager.nowFrame <= endFrame)
         {
@@ -1550,6 +1802,57 @@ public class Player : KeyInputter {
         //이건 그냥 마지막에 넣어준다.
     }
 
+
+    // 투사체 애니메이션 코루틴
+    // isUlt가 true면, 궁극기 투사체임.
+    IEnumerator ProjectileAnimation(bool isUlt, bool isNeferAndZZZZ = false)
+    {
+
+        
+        //if(isProjectileThrew == false)
+        {
+            // 폴더 2개로 나눔
+            //Debug.Log("궁극기 투사체 : ProjectileUlt폴더, 그외 Projectile 폴더.");
+            isProjectileThrew = true;
+            Sprite[] sprites;
+            
+            if(isNeferAndZZZZ == true)
+            {
+                sprites = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/ProjectileZ4");
+            }
+            else
+            {
+                if (isUlt)
+                    sprites = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/ProjectileUlt");
+                else
+                    sprites = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Projectile");
+            }
+            
+
+            int index = 0;
+            if (sprites != null)
+                projectileSr.sprite = sprites[0];
+            // int frame = FrameManager.nowFrame;
+            while (skillEffectObj.activeSelf != false)
+            {
+                {
+                    if (sprites != null)
+                            projectileSr.sprite = sprites[(++index) % sprites.Length];
+                    
+                }
+                if(skillEffectObj.activeSelf == false)
+                {
+                    isProjectileThrew = false;
+                    break;
+                    
+                }
+                yield return new WaitForSeconds(0.017f);
+            } 
+        }
+
+    }
+
+
     //FrameManager에서 호출된다
     /* 상대편에게 입힌데미지 정보를 알려주어야 하기 때문에 float damagedHP를 return한다
      * 입힌 데미지 정보는 상대플레이어의 UltPointIncrease로 들어가고, 상대편의 ultPoint를 높여준다.
@@ -1567,6 +1870,9 @@ public class Player : KeyInputter {
         invulnerable = true;                //무적
         one = one * -1; //FrameManager에서 받는 one은 시전자 기준이다. 여기는 맞는거니까 반대로 해줘야한다.
         oponentSkill = skill;               //상대스킬이 뭔지.
+
+        
+
         if (one == -1)
         {
             movingRight = false;
@@ -1589,7 +1895,24 @@ public class Player : KeyInputter {
         invulnerableFrame = FrameManager.nowFrame + leftActiveFrame;
         if (nowState == State.Guarding || nowState == State.GuardSuccess)
         {
-            damagedHP = (skill.damage * oponentBuffRatio) * 0.4f;
+            
+
+            // 첫 가드일때, 혹은 가드/가드성공인데 이전에 맞은 스킬과 지금 맞은 스킬이 다를때 
+            if (nowState == State.Guarding   || preHittedSkill != skill.command)
+            {
+             
+                damagedHP = (skill.damage * oponentBuffRatio) * 0.4f;
+            }        
+            // 가드 성공했는데 또 맞은경우
+            else 
+            {
+                Debug.Log("응~안아파");
+              
+                    damagedHP = (skill.damage * oponentBuffRatio) * 0f;
+                
+            }
+            preHittedSkill = skill.command;
+
             nowHealthPoint -= damagedHP;
             nowUltPoint += damagedHP * 0.4f;
             if (nowUltPoint > ultPoint)
@@ -1598,8 +1921,11 @@ public class Player : KeyInputter {
                 nowUltPoint = ultPoint;
             }
             nowState = State.GuardSuccess;
+            // 가드 성공시 일단 무적판정
+            invulnerable = true;
+
             skillGuarded = true;
-            oponentSkillDelay = FrameManager.nowFrame + skill.againstGuardFrame + leftActiveFrame;  //내 후딜은 얼마냐
+           oponentSkillDelay = FrameManager.nowFrame + skill.againstGuardFrame + leftActiveFrame;  //내 후딜은 얼마냐
             //가드 스프라이트
             spriteChangeGab[7] = (oponentSkillDelay - FrameManager.nowFrame) / guardSpriteArr.Length;
             nowSpriteArr = guardSpriteArr;
@@ -1686,7 +2012,15 @@ public class Player : KeyInputter {
         }
         if (FrameManager.nowFrame > oponentSkillDelay)
         {
-            IdleStart();
+            if(State.GuardSuccess != nowState)
+                        IdleStart();
+            else
+            {
+                // 프레임 지났을 경우 다시 쳐맞도록 함.(0.4배로)
+                nowState = State.Guarding;
+                if(invulnerable == true)
+                    invulnerable = false;
+            }
             return;
         }
         /*
@@ -1708,6 +2042,7 @@ public class Player : KeyInputter {
         //FallDown일 때 일어나서도 invulnerable이 되어야함.
         while(FrameManager.nowFrame < invulnerableFrame-1)
         {
+//            Debug.Log("Invulnerable");
             yield return null;
         }
         invulnerable = false;
@@ -1722,6 +2057,7 @@ public class Player : KeyInputter {
         inputBool = false;
         while (inputStartFrame > FrameManager.nowFrame)
         {
+            Debug.Log(playerName + " 의 ips : " + inputStartFrame + " now " + FrameManager.nowFrame);
             // 클리어 시간보다 시간이 더 지났으면 커맨드 누적 클리어. 여기서 클리어 프레임은 모션에서의 InputDelay로 정해준다.
             yield return null;
         }
@@ -1732,8 +2068,16 @@ public class Player : KeyInputter {
             // 클리어 시간보다 시간이 더 지났으면 커맨드 누적 클리어. 여기서 클리어 프레임은 모션에서의 InputDelay로 정해준다.
             yield return null;
         }
-
+        // 네페르인데, 버프 스포트라이트가 켜져있었다면 끈다.
+        if(this.playerName == "Nefer")
+        {
+            if(buffReadySr.enabled == true)
+            {
+                buffReadySr.enabled = false;
+            }
+        }
         latestCommand.Clear();
+        isProjectileThrew = false;
         Debug.Log("클리어");
         clearFrame = 0;
         corRunning = false;
@@ -1741,14 +2085,27 @@ public class Player : KeyInputter {
 
     //버프시간 재어주는 코루틴
     IEnumerator buffCor() //StartFrame은 FrameManager에 더해진 값이다
-    {   
+    {
         //스킬 실행해줄때 코루틴 실행해준다.
-        
+        //int nowRoundNum = GameManager.instance.roundNum;
         buffed = true;
-        while(FrameManager.nowFrame <= buffFrame)
+        Sprite [] buffSprites = Resources.LoadAll<Sprite>("MotionSprite/" + playerName + "/Buff");
+        int index = 0;
+        int buffIndex =0 ;
+        buffSr.enabled = true;
+        while (FrameManager.nowFrame <= buffFrame)
         {
+            if (nowRoundNum != GameManager.instance.roundNum) break;
+            // 여기에 버프 이미지 들어가면 될거같다.
+            if (++index >= 6)
+            {
+                
+                index = 0;
+                buffSr.sprite = buffSprites[(++buffIndex) % 5];
+            }
             yield return null;
         }
+        buffSr.enabled = false;
         buffed = false;
         buffRatio = 1.0f;
     }
@@ -1843,8 +2200,9 @@ public class Player : KeyInputter {
         {
             nowState = State.Ready;
             callEveryFrame = DoNothing; //애니메이션 멈추기용
-            frameManager.Restart(playerNum - 1);
+            StartCoroutine(frameManager.Restart(playerNum - 1));
             //여기에 겜끝나면 나오는 무언가가 있겟지 뭐;
+
         }
 
     }
@@ -1862,15 +2220,18 @@ public class Player : KeyInputter {
             waiting++;
             yield return null;
         }
+        
         rigidBody.velocity = Vector2.zero;
         nowSpriteArr = victorySpriteArr;
         nowGabIndex = 10;
         spriteChangeGab[10] = 3;
         spriteChangeCounter = spriteChangeGab[10];
         spriteCount = nowSpriteArr.Length;
+        //yield return new WaitForSecondsRealtime(1f);
         nowSpriteIndex = 0;
         nowState = State.GameEnd;
         callEveryFrame = GameOver;
+        
 
     }
 
