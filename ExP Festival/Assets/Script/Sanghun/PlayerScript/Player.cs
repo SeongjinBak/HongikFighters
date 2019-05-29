@@ -2136,7 +2136,7 @@ public class Player : KeyInputter {
             Debug.Log("현재 카운트 : " + spriteCount);
             Debug.Log(5 * (spriteCount - nowSpriteIndex + 2));
             oponentSkillDelay = FrameManager.nowFrame + 5*(spriteCount - nowSpriteIndex + 2); //이제 원래 후딜인 10장짜리 50프레임을 실행시켜야한다
-            invulnerableFrame = FrameManager.nowFrame + 5 * (spriteCount - nowSpriteIndex + 2) + 20; //무적시간도 해준다
+            invulnerableFrame = FrameManager.nowFrame + 5 * (spriteCount - nowSpriteIndex + 2) + 30; //무적시간도 해준다
 
         }
 
