@@ -1150,7 +1150,6 @@ public class Player : KeyInputter {
         }
         else
         {
-            //if (collider.IsTouching(floor) || collisionPlatform.CompareTag("Floor"))
             if (collider.IsTouching(floor))
             {
                 return;
