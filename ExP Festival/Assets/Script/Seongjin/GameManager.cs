@@ -1,12 +1,9 @@
 ﻿
 /*
  * 작성자 : 백성진
- * 게임매니저 클래스 입니다!
+ * 게임매니저 클래스 입니다.
  * 
  */ 
-
-
-
 
 using System.Collections;
 using System.Collections.Generic;
@@ -46,22 +43,23 @@ public class GameManager : MonoBehaviour {
         // 해상도 고정
         Screen.SetResolution(1366, 768, true);
     }
+
     // Use this for initialization
     void Start () {
         
         mapName = "";
-        // 0번쨰(테스트맵)에서의 시작위치 조정.
+        // 테스트 맵에서의 시작위치 고정.
         startPosition[0, 0] = new Vector2(-50f, 4.09f);
         startPosition[0, 1] = new Vector2(38.8f, 4.09f);
 
-        // 이 변수가 참이면, false될때까지 어떠한 버튼도 입력하지 못하게함.
+        // 이 변수가 참이면, false될 때 까지 어떠한 버튼도 입력하지 못하게함.
         forbidEveryInput = true;
 
         // 라운드 수 초기화
         roundNum = 0;
     }
 
-    // 게임종료시, 이전 게임의 데이터는 모두 초기화한다. 위치는 맵 전부 공통으로 초기화 되므로 리셋하지 않음.
+    // 게임종료시, 이전 게임에서 내려온 데이터는 모두 초기화한다. 위치는 맵 전부 공통으로 초기화 되므로 리셋하지 않는다.
     public void ResetGameData()
     {
         mapName = "";

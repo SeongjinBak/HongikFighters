@@ -25,7 +25,7 @@ public class MainStart : MonoBehaviour {
     // Update is called once per frame
     void Update () {
         // 입력으로 아무 키나 들어왔을 경우
-
+        // Insert키가 들어왔을 경우, 이스터 에그인 VeryImportant 씬으로 이동한다.
         if (Input.GetKeyDown(KeyCode.Insert))
         {
             SceneManager.LoadScene("VeryImportant");
@@ -33,7 +33,7 @@ public class MainStart : MonoBehaviour {
         else if (Input.anyKeyDown)
         {
             // 다음씬으로 이동
-            // 190412 => 그냥 씬 로드 이지만, 추후 async로 바뀔 가능성 있음
+            // 190412 => 지금은 간단한 씬 로드 이지만, Resources Load로 인한 부하가 있을 경우, 추후 async로 바뀔 가능성 있음
 
             if (!isButtonPressed)
             {
@@ -44,6 +44,7 @@ public class MainStart : MonoBehaviour {
         }
 	}
 
+    // 캐릭터 선택창으로 씬 이동.
     IEnumerator ChangeSceneToPickWindow(bool picked)
     {
         if(picked == false)

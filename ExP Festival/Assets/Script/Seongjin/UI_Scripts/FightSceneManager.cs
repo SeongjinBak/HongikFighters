@@ -26,6 +26,7 @@ public class FightSceneManager : MonoBehaviour {
     private Player p1, p2;
     // 뒷배경
     private SpriteRenderer backGround;
+    
     // Use this for initialization
     void Start () {
         // 맵 정보 세팅함. GM에 저장되어 있는 그대로 받아옴.
@@ -56,13 +57,16 @@ public class FightSceneManager : MonoBehaviour {
         }
         // 프레임매니저 저장.
         fm = GameObject.Find("FrameManager").GetComponent<FrameManager>();
+
         // 플레이어 스크립트 저장
         p1 = GameObject.Find("Player1").GetComponent<Player>();
         p2 = GameObject.Find("Player2").GetComponent<Player>();
 
+        // 특정 맵에서는 바닥을 꺼야 한다.
         TurnOffFloor();
     }
 
+    // 업데이트문에서 결투 씬에서의 HP, ULT 등을 판단.
     private void Update()
     {
         CheckVictory();
@@ -70,6 +74,7 @@ public class FightSceneManager : MonoBehaviour {
         HpImage();
     }
 
+    // 바닥 turn off.
     public void TurnOffFloor()
     {
         if (GameManager.instance.mapName == "map_Cafenamu" || GameManager.instance.mapName == "map_Playground")

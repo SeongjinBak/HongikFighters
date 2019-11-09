@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿/*
+ * 게임 시작 전, 키 설명 등이 이루어지는 도움말 창
+ */ 
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,9 +21,10 @@ public class HelpScriptManager : MonoBehaviour {
     // 페이드 아웃용도의 검정 화면
     public Image Fader;
     private bool isButtonPressed = false;
-	// Use this for initialization
+	
+    // Use this for initialization
 	void Start () {
-        // 배경이미지
+        // 배경이미지 불러온다.
         backGroundSr.sprite = Resources.Load<Sprite>("BackGroundMap/" + GameManager.instance.mapName);
         // 도움말 스프라이트 렌더러에 동아리에 맞게 이미지 출력
         p1_script_sr.sprite = Resources.Load<Sprite>("HelpWindow/" + GameManager.instance.player1_name + "-1P");
@@ -33,6 +38,8 @@ public class HelpScriptManager : MonoBehaviour {
         StartCoroutine(PressAnyBtn());
         StartCoroutine(PlayIdleAnim());
     }
+
+    // 선택된 동아리들의 Idle Animation 재생.
     IEnumerator PlayIdleAnim()
     {
         int index = 0;
@@ -45,6 +52,8 @@ public class HelpScriptManager : MonoBehaviour {
             yield return new WaitForSecondsRealtime(0.1f);
         }
     }
+
+    // Press Any Button 텍스트를 주기적으로 점멸한다.
     IEnumerator Spark()
     {
         while (true)
@@ -55,6 +64,8 @@ public class HelpScriptManager : MonoBehaviour {
             pressAnyBtnImage.SetActive(false);
         }
     }
+
+    // 도움말 출력 후 Fade out.
     IEnumerator FadeOut()
     {
         // 0.6초에 걸쳐 씬을 페이드 아웃,
@@ -69,10 +80,14 @@ public class HelpScriptManager : MonoBehaviour {
         // 다음 씬으로 이동
         LoadNextScene();
     }
+
+    // 다음씬으로 이동.
     void LoadNextScene()
     {
         SceneManager.LoadScene("test");
     }
+
+    // 입력이 있는지 판단하는 함수.
 	IEnumerator PressAnyBtn()
     {
         StartCoroutine(Spark());

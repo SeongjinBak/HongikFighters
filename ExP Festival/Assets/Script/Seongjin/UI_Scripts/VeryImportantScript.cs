@@ -1,4 +1,9 @@
-﻿using System.Collections;
+﻿/*
+ * Easter Egg Class!
+ * 메인 화면에서 Insert를 누르면 크레딧을 볼 수 있는 ImportantScene으로 올 수 있습니다.
+ */
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +14,7 @@ public class VeryImportantScript : MonoBehaviour {
     [TextArea]
     public string [] thankyou;
     Text txt;
+
     // Use this for initialization
     void Start () {
         txt = GameObject.Find("Text").GetComponent<Text>();

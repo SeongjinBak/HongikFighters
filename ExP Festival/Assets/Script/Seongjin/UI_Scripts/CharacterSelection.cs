@@ -3,7 +3,7 @@
  * 캐릭터 선택창 매니저 스크립트
  * 
  * 왼쪽, 위쪽 키 눌림 => 왼쪽으로 캐릭터 선택 프레임 이동. 우측, 아래쪽키 => 우측으로 이동.
- * 선택 버튼은, 1p : B  |  2p : I 임. 
+ * 선택 버튼은, 1p : B  |  2p : I 입니다. 
  * 
  * pointer 의 숫자에 따라서, 선택되는 동아리가 다르므로 꼭 순서 숙지하고 코딩하기 바랍니다!.
  */
@@ -41,7 +41,6 @@ public class CharacterSelection : MonoBehaviour {
     // 캐릭터 선택이 모두 완료 되었음을 나타내는 flag
     private bool isSelectionComplete;
 
-    // 각 캐릭터들(동아리) 
     // Use this for initialization
     void Start () {
 
@@ -58,23 +57,24 @@ public class CharacterSelection : MonoBehaviour {
         if(!isSelectionComplete && !GameManager.instance.forbidEveryInput)
             CheckKeyInput();
         CheckIsReady();
-     //   Debug.Log(player1_pointer + "  " + player2_pointer);
-     //   Debug.Log(isSelected[0] + " "+ isSelected[1]+ " "+ isSelected[2]+ " "+isSelected[3]);
     }
 
     // 페이드 인, 한 후 초기값 세팅
     IEnumerator FadeInSelectionSceneInitializer()
     {
-        // 페이드 인 전까진 키 못누르게 한다.
+        // 페이드 인 전까진 키를 누르지 못하게 한다.
         GameManager.instance.forbidEveryInput = true;
 
+        // 4개팀 모두 선택 되어있지 않게 초기값 설정.
         isSelected = new bool[] { false, false, false, false };
+        // 각 플레이어를 가리키는 포인터는 첫번째, 그리고 마지막번째를 가리킨다.
         player1_pointer = 0;
         player2_pointer = isSelected.Length - 1;
         player1_complete = false;
         player2_complete = false;
         isSelectionComplete = false;
-        // 액자 초기화
+
+        // 캐릭터 선택 액자 초기화
         FramesInitialize();
 
         player1_choice = 10;
@@ -90,6 +90,7 @@ public class CharacterSelection : MonoBehaviour {
             yield return new WaitForSecondsRealtime(0.01f);
         }
         canvas[2].sortingOrder = 0;
+
         // 페이드 인 후 키 누르게 함.
         GameManager.instance.forbidEveryInput = false;
 
@@ -103,6 +104,7 @@ public class CharacterSelection : MonoBehaviour {
             int p1 = 0; int p2 = 0;
             for (int i = 0; i < group.Length; i++)
             {
+                // 1p, 2p 구분
                 if (group[i].name.Contains("-1"))
                 {
                     player1_frame.Add(group[i]);
@@ -115,7 +117,7 @@ public class CharacterSelection : MonoBehaviour {
                 }
                 else
                 {
-                    Debug.Log("캐릭터 픽 액자 이름 오류!");
+                    Debug.Log("캐릭터 선택창 액자 이름 오류!");
                 }
             }
         }
@@ -130,10 +132,7 @@ public class CharacterSelection : MonoBehaviour {
         // 준비가 완료 되었다면.
         if(player1_complete && player2_complete)
         {
-           
-
             // 1p와 2p가 모두 complete 되었을 때 게임 시작
-           // Debug.Log("Selection complete!");
             if(isSelectionComplete == false)
             {
                 isSelectionComplete = !isSelectionComplete;
@@ -145,7 +144,8 @@ public class CharacterSelection : MonoBehaviour {
             }
         }
     }
-    // pointer에 따라 GM의 선택된 동아리 이름, 맵은 렌덤으로 변경 변경
+
+    // pointer에 따라 GM의 선택된 동아리 이름, 맵은 랜덤으로 변경.
     void SetSelectedClubName()
     {
         switch (player1_pointer)
@@ -178,16 +178,20 @@ public class CharacterSelection : MonoBehaviour {
                 GameManager.instance.player2_name = "Nefer";
                 break;
         }
+
         // 맵을 랜덤으로 설정
         int num = Random.Range(0, 4);
         string[] map = new string[4] { "HongikGate", "Playground", "EternalSmile", "Cafenamu" };
         GameManager.instance.mapName = "map_" + map[num];
     }
+
     // 준비 완료 시, 선택 안된 동아리는 회색처리
     void SetUnselectedClubColorBlack()
     {
         int [] p = new int[2] { -11, -11 };
         int pp = 0;
+
+        // 선택되지 않은 두 동아리의 번호를 p에 저장한다.
         for (int i = 0; i < 4; i++)
         {
             if (i != player1_pointer && i != player2_pointer)
@@ -197,17 +201,11 @@ public class CharacterSelection : MonoBehaviour {
         }
         string name = "";
 
-        //Image image;
         for (int i = 0; i < p.Length; i++)
         {
+            // 선택되지 않은 두 동아리에 회색 이미지를 덧댄다.
             if(p[i] >= 0)
-            {   /*
-                name = "Candidate" + (p[i] + 1).ToString();
-                image = GameObject.Find("/Canvas/PickList/" + name + "/Image").GetComponent<Image>();
-                image.color = Color.gray;
-                image = GameObject.Find("/Canvas/PickList/" + name).GetComponent<Image>();
-                image.color = Color.gray;
-                */
+            {   
                 name = "fade" + (p[i] + 1).ToString();
                 GameObject.Find(name).GetComponent<Image>().enabled = true;
 
@@ -229,7 +227,7 @@ public class CharacterSelection : MonoBehaviour {
         SceneManager.LoadScene("HelpScript");
     }
 
-    // 버튼 탐지 하는 함수
+    // 입력된 키(버튼)에 따라 캐릭터 액자의 모양을 변경하는 함수
     void CheckKeyInput()
     {
         // 1P의 입력 탐지
@@ -318,7 +316,7 @@ public class CharacterSelection : MonoBehaviour {
             {
                 isSelected[player1_pointer] = true;
                 player1_complete = true;
-                // 선택되었을 시 이미지 재생
+                // 선택되었을 시 준비이미지 재생
                 PlayPickedAnim(player1_pointer);
                 // 선택되었을 시 액자 깜빡임/ 사운드 효과
                 StartCoroutine(PickedEffect(1));
@@ -371,7 +369,8 @@ public class CharacterSelection : MonoBehaviour {
             SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickLock"));
         }
     }
-    // 액자의 sorting order를 정하는 함수
+
+    // 액자의 sorting order를 정하는 함수, 즉 가장 나중에 움직인게 위로 올라온다.
     void ResetSortingOrder(int playerNum)
     {
         // 현재 움직인게 1p인경우
@@ -387,6 +386,7 @@ public class CharacterSelection : MonoBehaviour {
             canvas[1].sortingOrder = 5;
         }
     }
+
     // 캐릭터가 선택 되었을 경우, 캐릭터 창이 '깜빡' 하는 효과
     IEnumerator PickedEffect(int p)
     {
@@ -406,7 +406,7 @@ public class CharacterSelection : MonoBehaviour {
         }
     }
 
-    // 선택 애니메이션 출력 함수 (Caller)
+    // 한 동아리가 선택 되었을때 재생되는, 픽 애니메이션 출력 함수 (Caller)
     void PlayPickedAnim(int pointer)
     {
         string name = "Candidate" + (pointer + 1).ToString();
