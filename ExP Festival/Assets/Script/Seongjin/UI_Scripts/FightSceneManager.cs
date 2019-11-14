@@ -1,4 +1,10 @@
-﻿using System.Collections;
+﻿/*
+ * 결투씬 UI 담당 매니저 입니다.
+ * 결투 씬(메인 게임플레이 씬) 에서 화면 상단에 출력될 플레이어별 hp, mp, number of victory
+ * 그리고 맵 Background와 platform 형성 또한 이 스크립트에서 담당합니다.
+ */
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,7 +37,6 @@ public class FightSceneManager : MonoBehaviour {
     void Start () {
         // 맵 정보 세팅함. GM에 저장되어 있는 그대로 받아옴.
         // 플랫폼 세팅
-
         backGround = GameObject.Find("BATTLE_MAP").GetComponent<SpriteRenderer>();
 
         if (!isDebugging)
