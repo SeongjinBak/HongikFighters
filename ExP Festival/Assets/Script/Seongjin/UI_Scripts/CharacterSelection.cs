@@ -2,10 +2,16 @@
  * 작성자 : 백성진
  * 캐릭터 선택창 매니저 스크립트
  * 
- * 왼쪽, 위쪽 키 눌림 => 왼쪽으로 캐릭터 선택 프레임 이동. 우측, 아래쪽키 => 우측으로 이동.
- * 선택 버튼은, 1p : B  |  2p : I 입니다. 
+ * 왼쪽, 위쪽 키 눌림 => 왼쪽으로 캐릭터 선택 프레임 이동. 
+ * 우측, 아래쪽키 => 우측으로 캐릭터 선택 프레임 이동.
+ * 선택 버튼은, 1p : C | 2p : I 입니다. 
  * 
- * pointer 의 숫자에 따라서, 선택되는 동아리가 다르므로 꼭 순서 숙지하고 코딩하기 바랍니다!.
+ * 1. 1p, 2p pointer가 캐릭터를 가리킵니다.
+ * 2. 선택된 캐릭터는 다른 플레이어가 선택할 수 없습니다.
+ * 3. 선택된 캐릭터는 '준비동작' 애니메이션이 재생됩니다. 선택된 후 다시 '선택하기 키'를 누를경우 선택 해제됩니다.
+ * 4. 같은 캐릭터를 1p와 2p가 가리킬 경우, 가장 마지막으로 해당 캐릭터에 온 플레이어의 액자(Frame)가 노출됩니다.
+ * 5. 선택된 캐릭터의 Frame은 0.1초간 점멸 효과가 적용됩니다.
+ * 6. 1p와 2p가 각각 캐릭터를 선택 완료한 경우, 선택되지 않은 나머지 캐릭터는 회색 블러처리 됩니다.
  */
 
 
@@ -28,7 +34,7 @@ public class CharacterSelection : MonoBehaviour {
     // 1p, 2p 캐릭터 선택 완료 여부
     private bool player1_complete;
     private bool player2_complete;
-    // 1p or 2p가 선택한 동아리를 나타내는 액자
+    // 1p or 2p가 선택한 동아리를 나타내는 Frame
     private List<GameObject> player1_frame = new List<GameObject>();
     private List<GameObject> player2_frame = new List<GameObject>();
     // 액자 배열
@@ -95,6 +101,7 @@ public class CharacterSelection : MonoBehaviour {
         GameManager.instance.forbidEveryInput = false;
 
     }
+
     // 동아리 가리키는 이미지(액자) 할당 및 초기화 함수
     void FramesInitialize()
     {
@@ -139,8 +146,6 @@ public class CharacterSelection : MonoBehaviour {
                 SetUnselectedClubColorBlack();
                 StartCoroutine(NextSceneLoader());
                 SetSelectedClubName();
-                
-
             }
         }
     }
@@ -208,11 +213,8 @@ public class CharacterSelection : MonoBehaviour {
             {   
                 name = "fade" + (p[i] + 1).ToString();
                 GameObject.Find(name).GetComponent<Image>().enabled = true;
-
             }
         }
-        
-        
     }
 
     // 격투 씬으로 넘어갈 준비가 되었고, 캐릭터 애니메이션 전부 출력한 후 다음씬으로 넘김.
