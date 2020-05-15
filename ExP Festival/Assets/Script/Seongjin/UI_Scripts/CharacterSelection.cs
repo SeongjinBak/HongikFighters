@@ -37,6 +37,7 @@ public class CharacterSelection : MonoBehaviour {
     // 1p or 2p가 선택한 동아리를 나타내는 Frame
     private List<GameObject> player1_frame = new List<GameObject>();
     private List<GameObject> player2_frame = new List<GameObject>();
+    
     // 액자 배열
     public GameObject[] group;
     // 액자 canvas 2개 , UI창에서의 layer 구분을 위함.
@@ -48,14 +49,16 @@ public class CharacterSelection : MonoBehaviour {
     private bool isSelectionComplete;
 
     // Use this for initialization
-    private void Start () {
+    private void Start () 
+    {
         // 배경음악 재생
         BackSoundManager.instance.ChangeBackGroundMusic(Resources.Load<AudioClip>("BackGroundMusic/pickScene"));
         StartCoroutine(FadeInSelectionSceneInitializer());  
     }
 
 	// Update is called once per frame
-	private void Update () {
+	private void Update () 
+    {
         if(!isSelectionComplete && !GameManager.instance.forbidEveryInput)
         {
             CheckKeyInput();
@@ -98,7 +101,6 @@ public class CharacterSelection : MonoBehaviour {
 
         // 페이드 인 후 키 누르게 함.
         GameManager.instance.forbidEveryInput = false;
-
     }
 
     // 동아리 가리키는 이미지(액자) 할당 및 초기화 함수
@@ -276,7 +278,6 @@ public class CharacterSelection : MonoBehaviour {
             }
         }
 
-
         // 2P의 입력 탐지
         if (player2_complete == false)
         {
@@ -359,6 +360,7 @@ public class CharacterSelection : MonoBehaviour {
             // 사운드 재생
             SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickLock"));
         }
+        
         // 2P의 확인 버튼 탐지
         if (Input.GetKeyDown(KeyCode.I))
         {
