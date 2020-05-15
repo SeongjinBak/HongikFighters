@@ -48,31 +48,30 @@ public class CharacterSelection : MonoBehaviour {
     private bool isSelectionComplete;
 
     // Use this for initialization
-    void Start () {
-
+    private void Start () {
         // 배경음악 재생
         BackSoundManager.instance.ChangeBackGroundMusic(Resources.Load<AudioClip>("BackGroundMusic/pickScene"));
-        StartCoroutine(FadeInSelectionSceneInitializer());
-        
-        
+        StartCoroutine(FadeInSelectionSceneInitializer());  
     }
 
-	
 	// Update is called once per frame
-	void Update () {
+	private void Update () {
         if(!isSelectionComplete && !GameManager.instance.forbidEveryInput)
+        {
             CheckKeyInput();
+        }
         CheckIsReady();
     }
 
     // 페이드 인, 한 후 초기값 세팅
-    IEnumerator FadeInSelectionSceneInitializer()
+    private IEnumerator FadeInSelectionSceneInitializer()
     {
         // 페이드 인 전까진 키를 누르지 못하게 한다.
         GameManager.instance.forbidEveryInput = true;
 
         // 4개팀 모두 선택 되어있지 않게 초기값 설정.
         isSelected = new bool[] { false, false, false, false };
+
         // 각 플레이어를 가리키는 포인터는 첫번째, 그리고 마지막번째를 가리킨다.
         player1_pointer = 0;
         player2_pointer = isSelected.Length - 1;
@@ -86,7 +85,7 @@ public class CharacterSelection : MonoBehaviour {
         player1_choice = 10;
         player2_choice = 10;
 
-        // 0.6초에 걸쳐 씬을 페이드 아웃,
+        // 씬을 페이드 아웃,
         float dividend = 0.015f;
         while (Fader.color.a >= 0)
         {
@@ -103,7 +102,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 동아리 가리키는 이미지(액자) 할당 및 초기화 함수
-    void FramesInitialize()
+    private void FramesInitialize()
     {
         // frame들을 받아 온 후, 1p와 2p 액자 리스트에 넣는 코드. 넣은 직후 모두 비활성화 시킨다. 
         if (group != null)
@@ -134,7 +133,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 게임 준비 되었는지 판단하는 함수
-    void CheckIsReady()
+    private void CheckIsReady()
     {
         // 준비가 완료 되었다면.
         if(player1_complete && player2_complete)
@@ -151,7 +150,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // pointer에 따라 GM의 선택된 동아리 이름, 맵은 랜덤으로 변경.
-    void SetSelectedClubName()
+    private void SetSelectedClubName()
     {
         switch (player1_pointer)
         {
@@ -191,7 +190,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 준비 완료 시, 선택 안된 동아리는 회색처리
-    void SetUnselectedClubColorBlack()
+    private void SetUnselectedClubColorBlack()
     {
         int [] p = new int[2] { -11, -11 };
         int pp = 0;
@@ -204,6 +203,7 @@ public class CharacterSelection : MonoBehaviour {
                 p[pp++] = i;
             }
         }
+
         string name = "";
 
         for (int i = 0; i < p.Length; i++)
@@ -220,7 +220,7 @@ public class CharacterSelection : MonoBehaviour {
     // 격투 씬으로 넘어갈 준비가 되었고, 캐릭터 애니메이션 전부 출력한 후 다음씬으로 넘김.
     // 이 코루틴에서 GM에 이미지 할당할 수도 있음.
     // 준비 완료! 라는 이미지도 띄울 수 있음.
-    IEnumerator NextSceneLoader()
+    private IEnumerator NextSceneLoader()
     {
         // 2초 기다림.
         yield return new WaitForSeconds(2f);
@@ -230,7 +230,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 입력된 키(버튼)에 따라 캐릭터 액자의 모양을 변경하는 함수
-    void CheckKeyInput()
+    private void CheckKeyInput()
     {
         // 1P의 입력 탐지
         if(player1_complete == false)
@@ -239,6 +239,7 @@ public class CharacterSelection : MonoBehaviour {
             {
                 // 직전 액자 끄기
                 player1_frame[player1_pointer].SetActive(false);
+
                 if (player1_pointer - 1 < 0)
                 {
                     player1_pointer = isSelected.Length - 1;
@@ -247,10 +248,13 @@ public class CharacterSelection : MonoBehaviour {
                 {
                     player1_pointer = player1_pointer - 1;
                 }
+
                 // 직후 액자 켜기
                 player1_frame[player1_pointer].SetActive(true);
+
                 // 1p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(1);
+
                 // 사운드 재생
                 SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
@@ -263,8 +267,10 @@ public class CharacterSelection : MonoBehaviour {
 
                 // 직후 액자 켜기
                 player1_frame[player1_pointer].SetActive(true);
+
                 // 1p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(1);
+
                 // 사운드 재생
                 SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
@@ -278,6 +284,7 @@ public class CharacterSelection : MonoBehaviour {
             {
                 // 직전 액자 끄기
                 player2_frame[player2_pointer].SetActive(false);
+
                 if (player2_pointer - 1 < 0)
                 {
                     player2_pointer = isSelected.Length - 1;
@@ -286,10 +293,13 @@ public class CharacterSelection : MonoBehaviour {
                 {
                     player2_pointer = player2_pointer - 1;
                 }
+
                 // 직후 액자 켜기
                 player2_frame[player2_pointer].SetActive(true);
+
                 // 2p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(2);
+
                 // 사운드 재생
                 SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
@@ -302,8 +312,10 @@ public class CharacterSelection : MonoBehaviour {
 
                 // 직후 액자 켜기
                 player2_frame[player2_pointer].SetActive(true);
+
                 // 2p의 액자가 위로가게끔 순서 재조정
                 ResetSortingOrder(2);
+
                 // 사운드 재생
                 SoundManager.instance.PlaySound(Resources.Load<AudioClip>("UiSound/pickMove"));
             }
@@ -318,10 +330,13 @@ public class CharacterSelection : MonoBehaviour {
             {
                 isSelected[player1_pointer] = true;
                 player1_complete = true;
+
                 // 선택되었을 시 준비이미지 재생
                 PlayPickedAnim(player1_pointer);
+
                 // 선택되었을 시 액자 깜빡임/ 사운드 효과
                 StartCoroutine(PickedEffect(1));
+
                 // 선택한 동아리 저장.
                 player1_choice = player1_pointer;
 
@@ -333,8 +348,10 @@ public class CharacterSelection : MonoBehaviour {
                 {
                     isSelected[player1_pointer] = false;
                     player1_complete = false;
+
                     // 이미지 초기화
                     ImageInitialize(player1_pointer);
+
                     // 선택 동아리 초기화
                     player1_choice = 10;
                 }
@@ -351,6 +368,7 @@ public class CharacterSelection : MonoBehaviour {
                 isSelected[player2_pointer] = true;
                 player2_complete = true;
                 PlayPickedAnim(player2_pointer);
+
                 // 선택되었을 시 액자 깜빡임/ 사운드 효과
                 StartCoroutine(PickedEffect(2));
                 player2_choice = player2_pointer;
@@ -361,8 +379,10 @@ public class CharacterSelection : MonoBehaviour {
                 {
                     isSelected[player2_pointer] = false;
                     player2_complete = false;
+
                     // 이미지 초기화
                     ImageInitialize(player2_pointer);
+
                     // 동아리 초기화
                     player2_choice = 10;
                 }
@@ -373,7 +393,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 액자의 sorting order를 정하는 함수, 즉 가장 나중에 움직인게 위로 올라온다.
-    void ResetSortingOrder(int playerNum)
+    private void ResetSortingOrder(int playerNum)
     {
         // 현재 움직인게 1p인경우
         if(playerNum == 1)
@@ -390,7 +410,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 캐릭터가 선택 되었을 경우, 캐릭터 창이 '깜빡' 하는 효과
-    IEnumerator PickedEffect(int p)
+    private IEnumerator PickedEffect(int p)
     {
         // 1p인 경우
         if(p == 1)
@@ -409,7 +429,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 한 동아리가 선택 되었을때 재생되는, 픽 애니메이션 출력 함수 (Caller)
-    void PlayPickedAnim(int pointer)
+    private void PlayPickedAnim(int pointer)
     {
         string name = "Candidate" + (pointer + 1).ToString();
         string fileName = "";
@@ -423,7 +443,7 @@ public class CharacterSelection : MonoBehaviour {
 
         if (fileName == "") return;
 
-        // 리스트에 이미지들 담고, 코루틴 내에서 재생. 
+        // 리스트에 이미지들을 담고, 코루틴 내에서 재생. 
         List<Sprite> sprites = new List<Sprite>(Resources.LoadAll<Sprite>("MotionSprite/" + fileName + "/Picked"));
         Image image = GameObject.Find("/Canvas/PickList/" + name+"/Image").GetComponent<Image>();
 
@@ -434,7 +454,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // Caller에 의해 불려진 애니메이션 재생 Callee 코루틴 
-    IEnumerator PickedCoroutine(Image sr, List<Sprite> sprites, int pointer) 
+    private IEnumerator PickedCoroutine(Image sr, List<Sprite> sprites, int pointer) 
     {
         int len = sprites.Count;
        
@@ -455,7 +475,7 @@ public class CharacterSelection : MonoBehaviour {
     }
 
     // 선택 해제 된 경우 이미지를 초기화 한다.
-    void ImageInitialize(int pointer)
+    private void ImageInitialize(int pointer)
     {
         string name = "Candidate" + (pointer + 1).ToString();
         string fileName = "";
